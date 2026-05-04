@@ -16,9 +16,18 @@ const bcrypt = require('bcryptjs');
 const { neon } = require('@neondatabase/serverless');
 
 const SEED_USERS = [
-  { email: 'admin@trashdaymadeasy.com',    full_name: 'TDME Admin',       role: 'admin' },
-  { email: 'manager@trashdaymadeasy.com',  full_name: 'Sample Manager',   role: 'manager' },
-  { email: 'employee@trashdaymadeasy.com', full_name: 'Sample Employee',  role: 'employee' },
+  { email: 'admin@trashdaymadeeasy.com',    full_name: 'TDME Admin',       role: 'admin' },
+  { email: 'manager@trashdaymadeeasy.com',  full_name: 'Sample Manager',   role: 'manager' },
+  { email: 'employee@trashdaymadeeasy.com', full_name: 'Sample Employee',  role: 'employee' },
+];
+
+// Earlier seeds wrote these typo'd addresses to live databases. Rename them
+// in place before inserting so we don't create duplicate accounts side by side
+// with the corrected ones.
+const LEGACY_EMAIL_RENAMES = [
+  { from: 'admin@trashdaymadeasy.com',    to: 'admin@trashdaymadeeasy.com'    },
+  { from: 'manager@trashdaymadeasy.com',  to: 'manager@trashdaymadeeasy.com'  },
+  { from: 'employee@trashdaymadeasy.com', to: 'employee@trashdaymadeeasy.com' },
 ];
 
 async function main() {
@@ -31,6 +40,18 @@ async function main() {
   const password = process.env.SEED_PASSWORD || 'ChangeMe123!';
   const hash = await bcrypt.hash(password, 12);
   const sql = neon(url);
+
+  for (const r of LEGACY_EMAIL_RENAMES) {
+    const rows = await sql`
+      UPDATE users SET email = ${r.to}
+      WHERE email = ${r.from}
+        AND NOT EXISTS (SELECT 1 FROM users WHERE email = ${r.to})
+      RETURNING email
+    `;
+    if (rows.length) {
+      console.log('renamed legacy email:', r.from, '->', r.to);
+    }
+  }
 
   for (const u of SEED_USERS) {
     await sql`
