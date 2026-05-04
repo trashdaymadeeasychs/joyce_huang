@@ -1,0 +1,30 @@
+[build]
+  publish   = "src"
+  functions = "netlify/functions"
+  command   = "echo 'Static site — no build step'"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[dev]
+  publish   = "src"
+  framework = "#static"
+  port      = 8888
+
+[functions]
+  node_bundler   = "esbuild"
+  included_files = ["netlify/functions/_shared/**"]
+
+# SPA fallback — must come after any function/asset redirects
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    Permissions-Policy     = "geolocation=(), microphone=(), camera=()"

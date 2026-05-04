@@ -1,0 +1,24 @@
+{
+  "name": "tdme-expenses",
+  "version": "1.0.0",
+  "description": "Trash Day Made Easy — Expense Tracker",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "netlify dev",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.3",
+    "@netlify/blobs": "^7.3.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "ws": "^8.17.1"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}

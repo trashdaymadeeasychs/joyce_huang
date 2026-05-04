@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Tracker — Trash Day Made Easy</title>
+  <link rel="stylesheet" href="/styles/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════ -->
+<div id="login-screen" class="login-screen" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">🗑️</div>
+      <div class="logo-text">
+        <span class="brand">Trash Day Made Easy</span>
+        <span class="sub">Expense Tracker</span>
+      </div>
+    </div>
+    <h2 class="login-heading">Sign in to your account</h2>
+    <div id="login-error" class="alert alert-error" style="display:none"></div>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="login-email">Email address</label>
+        <input type="email" id="login-email" autocomplete="username" required placeholder="you@trashdaymadeasy.com">
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" autocomplete="current-password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn">Sign In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════ -->
+<div id="app-shell" class="app" style="display:none">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-icon">🗑️</div>
+      <div class="brand">Trash Day Made Easy</div>
+      <div class="sub">Expense Tracker</div>
+    </div>
+
+    <nav id="main-nav">
+      <!-- Employee nav -->
+      <a href="#" data-view="emp-dashboard"  data-roles="employee,manager,admin" class="nav-item">
+        <span class="ni">📊</span> Dashboard
+      </a>
+      <a href="#" data-view="emp-submit"     data-roles="employee,manager,admin" class="nav-item">
+        <span class="ni">➕</span> Submit Expense
+      </a>
+      <a href="#" data-view="emp-history"    data-roles="employee,manager,admin" class="nav-item">
+        <span class="ni">📋</span> My Expenses
+      </a>
+      <!-- Manager nav -->
+      <div class="nav-section-label" data-roles="manager,admin">Manager</div>
+      <a href="#" data-view="mgr-queue"      data-roles="manager,admin" class="nav-item">
+        <span class="ni">⏳</span> Pending Review
+        <span class="nav-badge" id="pending-badge" style="display:none">0</span>
+      </a>
+      <a href="#" data-view="mgr-all"        data-roles="manager,admin" class="nav-item">
+        <span class="ni">📁</span> All Expenses
+      </a>
+      <!-- Admin nav -->
+      <div class="nav-section-label" data-roles="admin">Admin</div>
+      <a href="#" data-view="adm-users"      data-roles="admin" class="nav-item">
+        <span class="ni">👥</span> Users
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div id="sidebar-user-info"></div>
+      <button id="logout-btn" class="btn-logout">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main" id="main-content">
+    <div class="topbar" id="topbar">
+      <h1 id="topbar-title">Dashboard</h1>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+
+    <div class="content">
+
+      <!-- ─── Employee: Dashboard ─── -->
+      <section id="view-emp-dashboard" class="view" style="display:none">
+        <div class="stat-grid" id="emp-stat-grid"></div>
+        <div class="report-grid">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Monthly Spend</span></div>
+            <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Spend by Category</span></div>
+            <div class="chart-wrap"><canvas id="chart-category"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Recent Expenses</span>
+            <a href="#" data-view="emp-history" class="btn btn-sm nav-link">View all</a>
+          </div>
+          <div id="emp-recent-list"></div>
+        </div>
+      </section>
+
+      <!-- ─── Employee: Submit Expense ─── -->
+      <section id="view-emp-submit" class="view" style="display:none">
+        <div class="card" style="max-width:600px">
+          <div class="card-header"><span class="card-title">Submit New Expense</span></div>
+          <div class="card-body">
+            <div id="submit-success" class="alert alert-success" style="display:none"></div>
+            <div id="submit-error"   class="alert alert-error"   style="display:none"></div>
+            <form id="expense-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Date *</label>
+                  <input type="date" id="exp-date" required>
+                </div>
+                <div class="form-group">
+                  <label>Amount ($) *</label>
+                  <input type="number" id="exp-amount" step="0.01" min="0.01" required placeholder="0.00">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Category *</label>
+                <select id="exp-category" required>
+                  <option value="">— Select category —</option>
+                  <option>Fuel</option>
+                  <option>Vehicle Maintenance</option>
+                  <option>Supplies &amp; Equipment</option>
+                  <option>Meals &amp; Entertainment</option>
+                  <option>Uniforms</option>
+                  <option>Office Expenses</option>
+                  <option>Marketing</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Description / Notes</label>
+                <textarea id="exp-description" rows="3" placeholder="What was this expense for?"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Receipt (optional)</label>
+                <div class="upload-area" id="upload-area">
+                  <input type="file" id="receipt-file" accept="image/*,application/pdf" style="display:none">
+                  <div id="upload-placeholder">
+                    <span class="upload-icon">📎</span>
+                    <span>Click to attach receipt</span>
+                    <span class="upload-hint">JPEG, PNG, PDF — max 5 MB</span>
+                  </div>
+                  <div id="upload-preview" style="display:none"></div>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="submit-btn">Submit Expense</button>
+                <button type="button" class="btn" id="reset-btn">Clear</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Employee: My Expense History ─── -->
+      <section id="view-emp-history" class="view" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">My Expenses</span>
+            <div class="filters">
+              <select id="hist-status">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <select id="hist-category">
+                <option value="">All Categories</option>
+                <option>Fuel</option>
+                <option>Vehicle Maintenance</option>
+                <option>Supplies &amp; Equipment</option>
+                <option>Meals &amp; Entertainment</option>
+                <option>Uniforms</option>
+                <option>Office Expenses</option>
+                <option>Marketing</option>
+                <option>Other</option>
+              </select>
+              <input type="date" id="hist-from" placeholder="From">
+              <input type="date" id="hist-to"   placeholder="To">
+              <button class="btn" id="hist-filter-btn">Filter</button>
+            </div>
+          </div>
+          <div id="hist-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th><th>Category</th><th>Amount</th>
+                  <th>Description</th><th>Status</th><th>Notes</th><th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="hist-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pager" id="hist-pager"></div>
+        </div>
+      </section>
+
+      <!-- ─── Manager: Pending Queue ─── -->
+      <section id="view-mgr-queue" class="view" style="display:none">
+        <div class="stat-grid" id="mgr-stat-grid"></div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Pending Approvals</span>
+            <div class="filters">
+              <select id="queue-emp">
+                <option value="">All Employees</option>
+              </select>
+              <select id="queue-cat">
+                <option value="">All Categories</option>
+                <option>Fuel</option>
+                <option>Vehicle Maintenance</option>
+                <option>Supplies &amp; Equipment</option>
+                <option>Meals &amp; Entertainment</option>
+                <option>Uniforms</option>
+                <option>Office Expenses</option>
+                <option>Marketing</option>
+                <option>Other</option>
+              </select>
+              <button class="btn" id="queue-filter-btn">Filter</button>
+            </div>
+          </div>
+          <div id="queue-empty" class="empty-state" style="display:none">
+            <div class="empty-icon">✅</div>
+            <p>No pending expenses — all caught up!</p>
+          </div>
+          <div id="queue-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th><th>Employee</th><th>Category</th><th>Amount</th>
+                  <th>Description</th><th>Receipt</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="queue-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pager" id="queue-pager"></div>
+        </div>
+      </section>
+
+      <!-- ─── Manager: All Expenses ─── -->
+      <section id="view-mgr-all" class="view" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">All Expenses</span>
+            <div class="filters">
+              <select id="all-status">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <select id="all-emp">
+                <option value="">All Employees</option>
+              </select>
+              <select id="all-cat">
+                <option value="">All Categories</option>
+                <option>Fuel</option>
+                <option>Vehicle Maintenance</option>
+                <option>Supplies &amp; Equipment</option>
+                <option>Meals &amp; Entertainment</option>
+                <option>Uniforms</option>
+                <option>Office Expenses</option>
+                <option>Marketing</option>
+                <option>Other</option>
+              </select>
+              <input type="date" id="all-from">
+              <input type="date" id="all-to">
+              <button class="btn" id="all-filter-btn">Filter</button>
+            </div>
+          </div>
+          <div id="all-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th><th>Employee</th><th>Category</th><th>Amount</th>
+                  <th>Description</th><th>Status</th><th>Reviewed By</th><th>Notes</th><th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="all-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pager" id="all-pager"></div>
+        </div>
+
+        <div class="report-grid" style="margin-top:20px">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Monthly Trend</span></div>
+            <div class="chart-wrap"><canvas id="chart-mgr-monthly"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">By Category</span></div>
+            <div class="chart-wrap"><canvas id="chart-mgr-category"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Admin: Users ─── -->
+      <section id="view-adm-users" class="view" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">User Management</span>
+            <button class="btn btn-primary" id="add-user-btn">+ Add User</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th><th>Email</th><th>Role</th><th>Status</th>
+                <th>Created</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- /content -->
+  </main>
+</div><!-- /app-shell -->
+
+<!-- ═══════════════════════════════════════
+     REVIEW MODAL
+════════════════════════════════════════ -->
+<div id="review-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="review-modal-title">Review Expense</h3>
+      <button class="modal-close" id="review-close">✕</button>
+    </div>
+    <div class="modal-body" id="review-modal-body"></div>
+    <div class="modal-footer">
+      <textarea id="review-notes" rows="3" placeholder="Notes (optional — required for rejection)"></textarea>
+      <div class="modal-btns">
+        <button class="btn btn-approve" id="approve-btn">✓ Approve</button>
+        <button class="btn btn-reject"  id="reject-btn">✕ Reject</button>
+        <button class="btn"             id="review-cancel">Cancel</button>
+      </div>
+      <div id="review-error" class="alert alert-error" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ADD/EDIT USER MODAL
+════════════════════════════════════════ -->
+<div id="user-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="user-modal-title">Add User</h3>
+      <button class="modal-close" id="user-modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="user-modal-error" class="alert alert-error" style="display:none"></div>
+      <form id="user-form">
+        <input type="hidden" id="user-id">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="user-name" required>
+        </div>
+        <div class="form-group" id="user-email-group">
+          <label>Email *</label>
+          <input type="email" id="user-email" autocomplete="off" required>
+        </div>
+        <div class="form-group">
+          <label>Role *</label>
+          <select id="user-role">
+            <option value="employee">Employee</option>
+            <option value="manager">Manager</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group" id="user-password-group">
+          <label id="user-password-label">Password *</label>
+          <input type="password" id="user-password" autocomplete="new-password" placeholder="Min 8 characters">
+        </div>
+        <div class="form-group" id="user-active-group" style="display:none">
+          <label class="checkbox-label">
+            <input type="checkbox" id="user-active"> Active account
+          </label>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-btns">
+        <button class="btn btn-primary" id="user-save-btn">Save</button>
+        <button class="btn" id="user-cancel-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     RECEIPT VIEWER MODAL
+════════════════════════════════════════ -->
+<div id="receipt-modal" class="modal-overlay" style="display:none">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h3>Receipt</h3>
+      <button class="modal-close" id="receipt-close">✕</button>
+    </div>
+    <div class="modal-body" id="receipt-modal-body" style="text-align:center; padding:16px;"></div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/expenses.js"></script>
+<script src="/js/manager.js"></script>
+<script src="/js/admin.js"></script>
+<script src="/js/app.js"></script>
+
+</body>
+</html>
