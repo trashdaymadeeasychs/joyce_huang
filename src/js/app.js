@@ -90,6 +90,7 @@ const App = (() => {
       'emp-history':   'My Expenses',
       'mgr-queue':     'Pending Approvals',
       'mgr-all':       'All Expenses',
+      'mgr-import':    'Import Statement',
       'adm-users':     'User Management',
     };
     document.getElementById('topbar-title').textContent = titles[viewId] || '';
@@ -99,6 +100,7 @@ const App = (() => {
     if (viewId === 'emp-history')    loadHistory(1);
     if (viewId === 'mgr-queue')      loadQueue(1);
     if (viewId === 'mgr-all')        loadAllExpenses(1);
+    if (viewId === 'mgr-import')     initImportView();
     if (viewId === 'adm-users')      loadUsers();
   }
 
