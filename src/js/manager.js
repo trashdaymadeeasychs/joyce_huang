@@ -1,5 +1,17 @@
-/* Manager views: pending queue, all expenses, charts */
+/* Manager views: pending queue, all expenses, charts, import */
 'use strict';
+
+const CATEGORIES = [
+  'Fuel',
+  'Vehicle Maintenance',
+  'Supplies & Equipment',
+  'Meals & Entertainment',
+  'Software & Technology',
+  'Uniforms',
+  'Office Expenses',
+  'Marketing & Advertising',
+  'Other',
+];
 
 let queuePage   = 1;
 let allExpPage  = 1;
@@ -122,6 +134,42 @@ async function loadMgrCharts() {
   } catch {}
 }
 
+/* ── Gmail Sync ────────────────────────── */
+
+async function syncGmail() {
+  const btn = document.getElementById('sync-gmail-btn');
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Syncing...';
+  const statusEl = document.getElementById('sync-gmail-status');
+  if (statusEl) { statusEl.textContent = ''; statusEl.style.display = 'none'; }
+  try {
+    const result = await API.syncGmail();
+    if (statusEl) {
+      statusEl.textContent = result.message || 'Sync complete.';
+      statusEl.className = 'alert alert-success';
+      statusEl.style.display = 'block';
+      setTimeout(() => { statusEl.style.display = 'none'; }, 6000);
+    }
+    if (result.created > 0) {
+      loadQueue(1);
+      App.refreshPendingBadge();
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = 'Sync failed: ' + err.message;
+      statusEl.className = 'alert alert-error';
+      statusEl.style.display = 'block';
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+/* ── Gmail Receipt Viewer ─────────────── */
+
 async function loadGmailReceipt(messageId, containerId) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -184,7 +232,7 @@ async function confirmGmailLink() {
   const btn = document.getElementById('gmail-picker-confirm');
   btn.disabled = true; btn.textContent = 'Linking...';
   try {
-    await API.updateExpenseStatus({ expense_id: pickerExpenseId, status: 'pending', review_notes: null, gmail_message_id: pickerSelectedMsgId });
+    await API.updateExpense({ expense_id: pickerExpenseId, gmail_message_id: pickerSelectedMsgId });
     document.getElementById('gmail-picker').style.display = 'none';
     const receiptEl = document.getElementById('modal-receipt-display');
     if (receiptEl) loadGmailReceipt(pickerSelectedMsgId, 'modal-receipt-display');
@@ -193,10 +241,46 @@ async function confirmGmailLink() {
   }
 }
 
+/* ── Review Modal ─────────────────────── */
+
 let reviewingExpenseId = null;
 
 function buildUserOptions() {
   return cachedUsers.map(u => `<option value="${u.id}">${App.escHtml(u.full_name)} (${App.escHtml(u.email)})</option>`).join('');
+}
+
+function buildCategorySelect(currentCategory) {
+  const opts = CATEGORIES.map(c =>
+    `<option value="${App.escHtml(c)}"${c === currentCategory ? ' selected' : ''}>${App.escHtml(c)}</option>`
+  ).join('');
+  return `
+    <select id="review-category" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;min-width:200px" onchange="handleCategoryChange(this)">
+      ${opts}
+      <option value="__custom__"${'__custom__' === currentCategory ? ' selected' : ''}>Custom...</option>
+    </select>
+    <input type="text" id="review-category-custom" placeholder="Enter custom category"
+      style="display:none;margin-top:6px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;min-width:200px">
+  `;
+}
+
+function handleCategoryChange(sel) {
+  const customInput = document.getElementById('review-category-custom');
+  if (!customInput) return;
+  if (sel.value === '__custom__') {
+    customInput.style.display = 'block';
+    customInput.focus();
+  } else {
+    customInput.style.display = 'none';
+  }
+}
+
+function getSelectedCategory() {
+  const sel = document.getElementById('review-category');
+  if (!sel) return null;
+  if (sel.value === '__custom__') {
+    return (document.getElementById('review-category-custom')?.value || '').trim() || null;
+  }
+  return sel.value || null;
 }
 
 function buildReceiptSection(e) {
@@ -232,7 +316,7 @@ function openReviewModal(expenseId, expense) {
     <div class="modal-detail">
       <span class="lbl">Employee</span><span>${employeeField}</span>
       <span class="lbl">Date</span><span>${App.fmtDate(e.expense_date)}</span>
-      <span class="lbl">Category</span><span>${App.escHtml(e.category)}</span>
+      <span class="lbl">Category</span><span>${buildCategorySelect(e.category)}</span>
       <span class="lbl">Amount</span><span class="amount">${App.fmt(e.amount)}</span>
       <span class="lbl">Description</span><span>${App.escHtml(e.description) || '—'}</span>
       <span class="lbl">Submitted</span><span>${App.fmtDate(e.created_at)}</span>
@@ -250,13 +334,16 @@ async function submitReview(status) {
   const errEl = document.getElementById('review-error');
   const assignSelect = document.getElementById('review-assign-user');
   const userId = assignSelect ? (parseInt(assignSelect.value, 10) || null) : null;
+  const category = getSelectedCategory();
+
   if (status === 'rejected' && !notes) { errEl.textContent = 'Please provide a reason for rejection.'; errEl.style.display = 'block'; return; }
   if (assignSelect && !userId) { errEl.textContent = 'Please select an employee before approving or rejecting.'; errEl.style.display = 'block'; return; }
+
   const approveBtn = document.getElementById('approve-btn');
   const rejectBtn = document.getElementById('reject-btn');
   approveBtn.disabled = rejectBtn.disabled = true;
   try {
-    await API.updateExpenseStatus({ expense_id: reviewingExpenseId, status, review_notes: notes || null, user_id: userId });
+    await API.updateExpenseStatus({ expense_id: reviewingExpenseId, status, review_notes: notes || null, user_id: userId, category });
     document.getElementById('review-modal').style.display = 'none';
     loadQueue(queuePage);
     App.refreshPendingBadge();
@@ -267,6 +354,144 @@ async function submitReview(status) {
   }
 }
 
+/* ── CSV Import ───────────────────────── */
+
+function guessCategory(vendor) {
+  const v = (vendor || '').toLowerCase();
+  if (/perplexity|anthropic|openai|claude|canva|adobe|figma|notion|slack|zoom|microsoft|google|netlify|railway|github|dealify|blink|saas|software/.test(v)) return 'Software & Technology';
+  if (/restaurant|cafe|doordash|grubhub|ubereats|starbucks|mcdonalds|bar|sushi|pizza|grill|diner|coffee|chipotle|panera/.test(v)) return 'Meals & Entertainment';
+  if (/fuel|gas|shell|exxon|chevron|bp|texaco|speedway|loves/.test(v)) return 'Fuel';
+  if (/autozone|oreilly|napa|jiffy|midas|pep boys|vehicle|tire|mechanic/.test(v)) return 'Vehicle Maintenance';
+  if (/amazon|walmart|home depot|lowes|staples|office depot|costco|supply|equipment/.test(v)) return 'Supplies & Equipment';
+  if (/facebook|instagram|twitter|linkedin|google ads|mailchimp|marketing|advertising/.test(v)) return 'Marketing & Advertising';
+  if (/uniform|workwear|cintas|aramark/.test(v)) return 'Uniforms';
+  if (/office|fedex|ups|usps|postage|stamp/.test(v)) return 'Office Expenses';
+  return 'Other';
+}
+
+function parseRelayCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  const idxDate   = header.indexOf('Date');
+  const idxPayee  = header.indexOf('Payee');
+  const idxType   = header.indexOf('Transaction Type');
+  const idxAmount = header.indexOf('Amount');
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].match(/(".*?"|[^,]+)(?=,|$)/g) || lines[i].split(',');
+    const clean = cols.map(c => c.trim().replace(/^"|"$/g, ''));
+
+    const txType = clean[idxType] || '';
+    const amtStr = (clean[idxAmount] || '').replace(/[^0-9.\-]/g, '');
+    const amount = parseFloat(amtStr);
+
+    if (!txType.toLowerCase().includes('spend')) continue;
+    if (isNaN(amount) || amount >= 0) continue;
+
+    const rawDate = clean[idxDate] || '';
+    const parts = rawDate.split('/');
+    let expenseDate = rawDate;
+    if (parts.length === 3) {
+      const [m, d, y] = parts;
+      expenseDate = `${y.padStart(4,'0')}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    }
+
+    const payee    = clean[idxPayee] || 'Unknown';
+    const category = guessCategory(payee);
+
+    rows.push({ expense_date: expenseDate, amount: Math.abs(amount), category, description: payee });
+  }
+  return rows;
+}
+
+function initImportView() {
+  const dropzone = document.getElementById('import-dropzone');
+  const fileInput = document.getElementById('import-file-input');
+  const preview = document.getElementById('import-preview');
+  const importBtn = document.getElementById('import-confirm-btn');
+  const statusEl = document.getElementById('import-status');
+  let parsedRows = [];
+
+  if (!dropzone) return;
+
+  function handleFile(file) {
+    if (!file || !file.name.endsWith('.csv')) {
+      statusEl.textContent = 'Please upload a CSV file.';
+      statusEl.className = 'alert alert-error';
+      statusEl.style.display = 'block';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      parsedRows = parseRelayCSV(e.target.result);
+      renderPreview(parsedRows);
+    };
+    reader.readAsText(file);
+  }
+
+  function renderPreview(rows) {
+    statusEl.style.display = 'none';
+    if (!rows.length) {
+      preview.innerHTML = '<p style="color:var(--text-muted);padding:16px">No "Spend" rows found in this CSV. Make sure you\'re uploading a Relay bank statement.</p>';
+      importBtn.style.display = 'none';
+      return;
+    }
+    preview.innerHTML = `
+      <p style="margin-bottom:8px;font-size:13px;color:var(--text-muted)">${rows.length} expense(s) found — review before importing:</p>
+      <table>
+        <thead><tr><th>Date</th><th>Payee</th><th>Category</th><th>Amount</th></tr></thead>
+        <tbody>${rows.map((r, i) => `
+          <tr>
+            <td>${App.escHtml(r.expense_date)}</td>
+            <td>${App.escHtml(r.description)}</td>
+            <td>
+              <select onchange="updateImportCategory(${i}, this.value)" style="font-size:12px;padding:2px 4px;border:1px solid var(--border);border-radius:4px">
+                ${CATEGORIES.map(c => `<option value="${App.escHtml(c)}"${c === r.category ? ' selected' : ''}>${App.escHtml(c)}</option>`).join('')}
+              </select>
+            </td>
+            <td class="amount">${App.fmt(r.amount)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    `;
+    importBtn.style.display = 'inline-block';
+  }
+
+  window.updateImportCategory = (idx, val) => { if (parsedRows[idx]) parsedRows[idx].category = val; };
+
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); });
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+  importBtn.addEventListener('click', async () => {
+    if (!parsedRows.length) return;
+    importBtn.disabled = true;
+    importBtn.textContent = 'Importing...';
+    try {
+      const result = await API.importExpenses(parsedRows);
+      statusEl.textContent = result.message || 'Import complete.';
+      statusEl.className = 'alert alert-success';
+      statusEl.style.display = 'block';
+      preview.innerHTML = '';
+      importBtn.style.display = 'none';
+      parsedRows = [];
+      App.refreshPendingBadge();
+    } catch (err) {
+      statusEl.textContent = 'Import failed: ' + err.message;
+      statusEl.className = 'alert alert-error';
+      statusEl.style.display = 'block';
+      importBtn.disabled = false;
+      importBtn.textContent = 'Import Expenses';
+    }
+  });
+}
+
+/* ── Event listeners ──────────────────── */
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('approve-btn')?.addEventListener('click', () => submitReview('approved'));
   document.getElementById('reject-btn')?.addEventListener('click', () => submitReview('rejected'));
@@ -275,6 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('review-modal')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.style.display = 'none'; });
   document.getElementById('queue-filter-btn')?.addEventListener('click', () => loadQueue(1));
   document.getElementById('all-filter-btn')?.addEventListener('click', () => loadAllExpenses(1));
+  document.getElementById('sync-gmail-btn')?.addEventListener('click', syncGmail);
 });
 
 window.loadQueue = loadQueue;
@@ -283,3 +509,5 @@ window.openReviewModal = openReviewModal;
 window.openGmailPicker = openGmailPicker;
 window.selectGmailReceipt = selectGmailReceipt;
 window.confirmGmailLink = confirmGmailLink;
+window.handleCategoryChange = handleCategoryChange;
+window.initImportView = initImportView;
