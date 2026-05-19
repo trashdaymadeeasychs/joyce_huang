@@ -70,6 +70,9 @@
       <a href="#" data-view="mgr-all"        data-roles="manager,admin" class="nav-item">
         <span class="ni">📁</span> All Expenses
       </a>
+      <a href="#" data-view="mgr-import"     data-roles="manager,admin" class="nav-item">
+        <span class="ni">📥</span> Import Statement
+      </a>
       <!-- Admin nav -->
       <div class="nav-section-label" data-roles="admin">Admin</div>
       <a href="#" data-view="adm-users"      data-roles="admin" class="nav-item">
@@ -140,9 +143,10 @@
                   <option>Vehicle Maintenance</option>
                   <option>Supplies &amp; Equipment</option>
                   <option>Meals &amp; Entertainment</option>
+                  <option>Software &amp; Technology</option>
                   <option>Uniforms</option>
                   <option>Office Expenses</option>
-                  <option>Marketing</option>
+                  <option>Marketing &amp; Advertising</option>
                   <option>Other</option>
                 </select>
               </div>
@@ -189,9 +193,10 @@
                 <option>Vehicle Maintenance</option>
                 <option>Supplies &amp; Equipment</option>
                 <option>Meals &amp; Entertainment</option>
+                <option>Software &amp; Technology</option>
                 <option>Uniforms</option>
                 <option>Office Expenses</option>
-                <option>Marketing</option>
+                <option>Marketing &amp; Advertising</option>
                 <option>Other</option>
               </select>
               <input type="date" id="hist-from" placeholder="From">
@@ -230,14 +235,17 @@
                 <option>Vehicle Maintenance</option>
                 <option>Supplies &amp; Equipment</option>
                 <option>Meals &amp; Entertainment</option>
+                <option>Software &amp; Technology</option>
                 <option>Uniforms</option>
                 <option>Office Expenses</option>
-                <option>Marketing</option>
+                <option>Marketing &amp; Advertising</option>
                 <option>Other</option>
               </select>
               <button class="btn" id="queue-filter-btn">Filter</button>
+              <button class="btn btn-primary" id="sync-gmail-btn" style="margin-left:8px">⟳ Sync Gmail</button>
             </div>
           </div>
+          <div id="sync-gmail-status" class="alert" style="display:none;margin:8px 16px 0"></div>
           <div id="queue-empty" class="empty-state" style="display:none">
             <div class="empty-icon">✅</div>
             <p>No pending expenses — all caught up!</p>
@@ -278,9 +286,10 @@
                 <option>Vehicle Maintenance</option>
                 <option>Supplies &amp; Equipment</option>
                 <option>Meals &amp; Entertainment</option>
+                <option>Software &amp; Technology</option>
                 <option>Uniforms</option>
                 <option>Office Expenses</option>
-                <option>Marketing</option>
+                <option>Marketing &amp; Advertising</option>
                 <option>Other</option>
               </select>
               <input type="date" id="all-from">
@@ -310,6 +319,29 @@
           <div class="card">
             <div class="card-header"><span class="card-title">By Category</span></div>
             <div class="chart-wrap"><canvas id="chart-mgr-category"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Manager: Import Statement ─── -->
+      <section id="view-mgr-import" class="view" style="display:none">
+        <div class="card" style="max-width:800px">
+          <div class="card-header"><span class="card-title">Import Bank Statement</span></div>
+          <div class="card-body" style="padding:20px">
+            <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px">
+              Upload a Relay bank statement CSV. Only card spend transactions will be imported as pending expenses.
+            </p>
+            <div id="import-dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s">
+              <input type="file" id="import-file-input" accept=".csv" style="display:none">
+              <div style="font-size:32px;margin-bottom:8px">📥</div>
+              <div style="font-weight:600;color:var(--text)">Drop CSV here or click to browse</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Relay bank statement CSV format</div>
+            </div>
+            <div id="import-status" class="alert" style="display:none;margin-top:12px"></div>
+            <div id="import-preview" style="margin-top:16px;overflow-x:auto"></div>
+            <div style="margin-top:16px">
+              <button id="import-confirm-btn" class="btn btn-primary" style="display:none">Import Expenses</button>
+            </div>
           </div>
         </div>
       </section>
