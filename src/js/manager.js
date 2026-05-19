@@ -315,10 +315,10 @@ function openReviewModal(expenseId, expense) {
   document.getElementById('review-modal-body').innerHTML = `
     <div class="modal-detail">
       <span class="lbl">Employee</span><span>${employeeField}</span>
-      <span class="lbl">Date</span><span>${App.fmtDate(e.expense_date)}</span>
+      <span class="lbl">Date</span><span><input type="date" id="review-date" value="${(e.expense_date || '').slice(0,10)}" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px"></span>
       <span class="lbl">Category</span><span>${buildCategorySelect(e.category)}</span>
       <span class="lbl">Amount</span><span class="amount">${App.fmt(e.amount)}</span>
-      <span class="lbl">Description</span><span>${App.escHtml(e.description) || '—'}</span>
+      <span class="lbl">Description</span><span><textarea id="review-description" rows="2" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;resize:vertical">${App.escHtml(e.description) || ''}</textarea></span>
       <span class="lbl">Submitted</span><span>${App.fmtDate(e.created_at)}</span>
       <span class="lbl" style="align-self:flex-start;padding-top:4px">Receipt</span><span>${buildReceiptSection(e)}</span>
     </div>
@@ -332,11 +332,13 @@ function openReviewModal(expenseId, expense) {
 }
 
 async function submitReview(status) {
-  const notes = document.getElementById('review-notes').value.trim();
-  const errEl = document.getElementById('review-error');
+  const notes       = document.getElementById('review-notes').value.trim();
+  const errEl       = document.getElementById('review-error');
   const assignSelect = document.getElementById('review-assign-user');
-  const userId = assignSelect ? (parseInt(assignSelect.value, 10) || null) : null;
-  const category = getSelectedCategory();
+  const userId      = assignSelect ? (parseInt(assignSelect.value, 10) || null) : null;
+  const category    = getSelectedCategory();
+  const description = document.getElementById('review-description')?.value.trim() || null;
+  const expenseDate = document.getElementById('review-date')?.value || null;
 
   if (status === 'rejected' && !notes) { errEl.textContent = 'Please provide a reason for rejection.'; errEl.style.display = 'block'; return; }
   if (assignSelect && !userId) { errEl.textContent = 'Please select an employee before approving or rejecting.'; errEl.style.display = 'block'; return; }
@@ -345,7 +347,7 @@ async function submitReview(status) {
   const rejectBtn = document.getElementById('reject-btn');
   approveBtn.disabled = rejectBtn.disabled = true;
   try {
-    await API.updateExpenseStatus({ expense_id: reviewingExpenseId, status, review_notes: notes || null, user_id: userId, category });
+    await API.updateExpenseStatus({ expense_id: reviewingExpenseId, status, review_notes: notes || null, user_id: userId, category, description, expense_date: expenseDate });
     approveBtn.disabled = rejectBtn.disabled = false;
     document.getElementById('review-modal').style.display = 'none';
     loadQueue(queuePage);
