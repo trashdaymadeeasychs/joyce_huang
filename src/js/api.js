@@ -31,7 +31,8 @@ const API = {
   getExpenses(params = {})  { return request('/expenses-list?' + new URLSearchParams(params)); },
   createExpense(data)       { return request('/expenses-create', { method: 'POST', body: JSON.stringify(data) }); },
   updateExpenseStatus(data) { return request('/expenses-update-status', { method: 'POST', body: JSON.stringify(data) }); },
-  updateExpense(data)       { return request('/expense-update', { method: 'POST', body: JSON.stringify(data) }); },
+  updateExpense(data)       { return request('/expense-update',  { method: 'POST', body: JSON.stringify(data) }); },
+  deleteExpense(expenseId)  { return request('/expense-delete',  { method: 'POST', body: JSON.stringify({ expense_id: expenseId }) }); },
   importExpenses(expenses)  { return request('/expenses-import', { method: 'POST', body: JSON.stringify({ expenses }) }); },
 
   // Users
