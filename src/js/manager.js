@@ -108,6 +108,7 @@ async function loadAllExpenses(page = 1) {
           <td style="font-size:12px">${e.reviewed_by_name ? App.escHtml(e.reviewed_by_name) : '—'}</td>
           <td style="font-size:12px;color:var(--text-muted)">${e.review_notes ? App.escHtml(e.review_notes) : '—'}</td>
           <td>${App.receiptLink(e.receipt_url, e.receipt_storage)}</td>
+          <td><button class="btn btn-sm" onclick="openReviewModal(${e.id}, ${App.escHtml(JSON.stringify(e))})">Edit</button></td>
         </tr>
       `).join('');
       App.buildPager('all-pager', pagination, loadAllExpenses);
@@ -289,8 +290,23 @@ function buildReceiptSection(e) {
   }
   if (e.receipt_url) return App.receiptLink(e.receipt_url, e.receipt_storage);
   return `
-    <span style="color:var(--text-muted);font-size:12px">No receipt attached.</span>
-    <button class="btn btn-sm" style="margin-left:8px" onclick="openGmailPicker(${e.id})">Search Gmail</button>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="color:var(--text-muted);font-size:12px">No receipt attached.</span>
+        <button class="btn btn-sm" onclick="openGmailPicker(${e.id})">Search Gmail</button>
+      </div>
+      <div id="modal-upload-zone"
+           ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
+           ondragleave="this.style.borderColor='var(--border)'"
+           ondrop="handleModalReceiptDrop(event,${e.id})"
+           onclick="document.getElementById('modal-upload-input').click()"
+           style="border:2px dashed var(--border);border-radius:8px;padding:14px;text-align:center;cursor:pointer;font-size:12px;color:var(--text-muted);transition:border-color 0.2s">
+        Drop PDF or image here, or click to browse
+        <input type="file" id="modal-upload-input" accept="image/*,application/pdf" style="display:none"
+               onchange="handleModalReceiptDrop({dataTransfer:{files:this.files}},${e.id})">
+      </div>
+      <div id="modal-upload-status"></div>
+    </div>
     <div id="gmail-picker" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:300px;overflow-y:auto">
       <div style="padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <span style="font-weight:600;font-size:13px">Select Gmail Receipt</span>
@@ -497,6 +513,33 @@ function initImportView() {
 }
 
 /* ── Event listeners ──────────────────── */
+
+async function handleModalReceiptDrop(event, expenseId) {
+  event.preventDefault && event.preventDefault();
+  const zone = document.getElementById('modal-upload-zone');
+  if (zone) zone.style.borderColor = 'var(--border)';
+  const file = event.dataTransfer?.files?.[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById('modal-upload-status');
+  if (statusEl) { statusEl.textContent = 'Uploading…'; statusEl.style.color = 'var(--text-muted)'; }
+
+  try {
+    const result = await API.uploadReceipt(file, expenseId);
+    if (statusEl) { statusEl.textContent = ''; }
+    const zone = document.getElementById('modal-upload-zone');
+    if (zone) {
+      if (file.type.startsWith('image/')) {
+        const url = result.receipt_url || result.url || '';
+        zone.innerHTML = `<img src="${App.escHtml(url)}" style="max-width:100%;max-height:200px;border-radius:6px">`;
+      } else {
+        zone.innerHTML = `<span style="font-size:12px;color:var(--success)">✓ Receipt uploaded: ${App.escHtml(file.name)}</span>`;
+      }
+    }
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = 'Upload failed: ' + err.message; statusEl.style.color = 'var(--error)'; }
+  }
+}
 
 async function deleteExpense() {
   if (!reviewingExpenseId) return;
