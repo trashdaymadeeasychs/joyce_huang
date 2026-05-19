@@ -18,6 +18,7 @@ exports.handler = async (event) => {
   const expenseId = parseInt(body.expense_id, 10);
   const status = body.status;
   const notes = body.review_notes ? String(body.review_notes).slice(0, 1000) : null;
+  const userId = body.user_id ? parseInt(body.user_id, 10) : null;
 
   if (!expenseId) return badRequest('expense_id is required');
   if (status !== 'approved' && status !== 'rejected') return badRequest('status must be approved or rejected');
@@ -27,10 +28,11 @@ exports.handler = async (event) => {
     const reviewerId = parseInt(session.sub, 10);
     const rows = await sql()`
       UPDATE expenses
-         SET status = ${status},
+         SET status       = ${status},
              review_notes = ${notes},
-             reviewed_by = ${reviewerId},
-             reviewed_at = NOW()
+             reviewed_by  = ${reviewerId},
+             reviewed_at  = NOW(),
+             user_id      = COALESCE(${userId}::int, user_id)
        WHERE id = ${expenseId}
        RETURNING id, status, reviewed_at
     `;
