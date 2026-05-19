@@ -38,6 +38,7 @@ const API = {
   getUsers()                { return request('/users-list'); },
   createUser(data)          { return request('/users-create', { method: 'POST', body: JSON.stringify(data) }); },
   updateUser(data)          { return request('/users-update', { method: 'POST', body: JSON.stringify(data) }); },
+  deleteUser(userId)        { return request('/users-delete', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); },
 
   // Dashboard
   getDashboard(year)        { return request('/dashboard-summary' + (year ? `?year=${year}` : '')); },
