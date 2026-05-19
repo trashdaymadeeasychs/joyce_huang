@@ -30,10 +30,10 @@ async function loadUsers() {
           <button class="btn btn-sm" onclick="openEditUser(${JSON.stringify(u).replace(/"/g, '&quot;')})">
             Edit
           </button>
-          <button class="btn btn-sm ${u.is_active ? 'btn-reject' : 'btn-approve'}"
-                  onclick="toggleUserActive(${u.id}, ${u.is_active})"
+          <button class="btn btn-sm btn-reject"
+                  onclick="deleteUser(${u.id}, '${App.escHtml(u.full_name)}')"
                   style="margin-left:4px">
-            ${u.is_active ? 'Deactivate' : 'Activate'}
+            Delete
           </button>
         </td>
       </tr>
@@ -71,14 +71,12 @@ function openEditUser(user) {
   document.getElementById('user-active').checked            = u.is_active;
   document.getElementById('user-modal-error').style.display = 'none';
 
-  // In edit mode, email is read-only and password is optional
   document.getElementById('user-email-group').style.display  = 'none';
   document.getElementById('user-email').required              = false;
   document.getElementById('user-password').required           = false;
   document.getElementById('user-password-label').textContent = 'New Password (leave blank to keep current)';
   document.getElementById('user-active-group').style.display = '';
 
-  // Pre-select current admin's own account protections handled server-side
   const currentUser = Auth.getUser();
   if (currentUser && String(u.id) === String(currentUser.sub)) {
     document.getElementById('user-active').disabled = true;
@@ -112,12 +110,10 @@ async function saveUser() {
 
   try {
     if (!id) {
-      // Create new user
       if (!email) throw new Error('Email is required.');
       if (!password || password.length < 8) throw new Error('Password must be at least 8 characters.');
       await API.createUser({ email, password, full_name: name, role });
     } else {
-      // Update existing user
       const payload = { user_id: parseInt(id, 10), full_name: name, role, is_active: isActive };
       if (password) {
         if (password.length < 8) throw new Error('Password must be at least 8 characters.');
@@ -137,15 +133,13 @@ async function saveUser() {
   }
 }
 
-async function toggleUserActive(userId, currentlyActive) {
-  const action = currentlyActive ? 'deactivate' : 'activate';
-  if (!confirm(`Are you sure you want to ${action} this user?`)) return;
-
+async function deleteUser(userId, userName) {
+  if (!confirm(`Delete ${userName}? Their name will stay on existing expenses, but they'll be removed from all dropdowns.`)) return;
   try {
-    await API.updateUser({ user_id: userId, is_active: !currentlyActive });
+    await API.deleteUser(userId);
     loadUsers();
   } catch (err) {
-    alert('Failed to update user: ' + err.message);
+    alert('Failed to delete user: ' + err.message);
   }
 }
 
@@ -167,6 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-window.loadUsers        = loadUsers;
-window.openEditUser     = openEditUser;
-window.toggleUserActive = toggleUserActive;
+window.loadUsers    = loadUsers;
+window.openEditUser = openEditUser;
+window.deleteUser   = deleteUser;
