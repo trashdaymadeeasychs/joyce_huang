@@ -19,7 +19,9 @@ exports.handler = async (event) => {
   const notes        = body.review_notes ? String(body.review_notes).slice(0, 1000) : null;
   const userId       = body.user_id ? parseInt(body.user_id, 10) : null;
   const gmailMsgId   = body.gmail_message_id ? String(body.gmail_message_id) : null;
-  const category     = body.category ? String(body.category).slice(0, 100) : null;
+  const category     = body.category     ? String(body.category).slice(0, 100)    : null;
+  const description  = body.description  ? String(body.description).slice(0, 500) : null;
+  const expenseDate  = body.expense_date ? String(body.expense_date).slice(0, 10) : null;
 
   if (!expenseId) return badRequest('expense_id is required');
   if (status !== 'approved' && status !== 'rejected') return badRequest('status must be approved or rejected');
@@ -34,8 +36,10 @@ exports.handler = async (event) => {
              reviewed_by      = ${parseInt(session.sub, 10)},
              reviewed_at      = NOW(),
              user_id          = COALESCE(${userId}::int,       user_id),
-             gmail_message_id = COALESCE(${gmailMsgId}::text,  gmail_message_id),
-             category         = COALESCE(${category}::text,    category)
+             gmail_message_id = COALESCE(${gmailMsgId}::text,   gmail_message_id),
+             category         = COALESCE(${category}::text,    category),
+             description      = COALESCE(${description}::text, description),
+             expense_date     = COALESCE(${expenseDate}::date, expense_date)
        WHERE id = ${expenseId}
        RETURNING id, status, reviewed_at
     `;
