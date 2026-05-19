@@ -9,7 +9,6 @@ exports.handler = async (event) => {
 
   const auth = requireAuth(event, ['manager', 'admin']);
   if (auth.error) return json(auth.error.statusCode, auth.error.body);
-  const { session } = auth;
 
   let body;
   try { body = JSON.parse(event.body || '{}'); }
@@ -20,21 +19,23 @@ exports.handler = async (event) => {
   const notes        = body.review_notes ? String(body.review_notes).slice(0, 1000) : null;
   const userId       = body.user_id ? parseInt(body.user_id, 10) : null;
   const gmailMsgId   = body.gmail_message_id ? String(body.gmail_message_id) : null;
+  const category     = body.category ? String(body.category).slice(0, 100) : null;
 
   if (!expenseId) return badRequest('expense_id is required');
   if (status !== 'approved' && status !== 'rejected') return badRequest('status must be approved or rejected');
   if (status === 'rejected' && !notes) return badRequest('review_notes is required when rejecting');
 
   try {
-    const reviewerId = parseInt(session.sub, 10);
+    const { session } = auth;
     const rows = await sql()`
       UPDATE expenses
          SET status           = ${status},
              review_notes     = ${notes},
-             reviewed_by      = ${reviewerId},
+             reviewed_by      = ${parseInt(session.sub, 10)},
              reviewed_at      = NOW(),
-             user_id          = COALESCE(${userId}::int, user_id),
-             gmail_message_id = COALESCE(${gmailMsgId}::text, gmail_message_id)
+             user_id          = COALESCE(${userId}::int,       user_id),
+             gmail_message_id = COALESCE(${gmailMsgId}::text,  gmail_message_id),
+             category         = COALESCE(${category}::text,    category)
        WHERE id = ${expenseId}
        RETURNING id, status, reviewed_at
     `;
