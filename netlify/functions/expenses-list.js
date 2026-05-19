@@ -42,7 +42,7 @@ exports.handler = async (event) => {
              r.full_name AS reviewed_by_name,
              COUNT(*) OVER() AS total_count
         FROM expenses e
-        JOIN users u ON u.id = e.user_id
+        LEFT JOIN users u ON u.id = e.user_id
         LEFT JOIN users r ON r.id = e.reviewed_by
        WHERE (${userIdFilter}::int IS NULL OR e.user_id = ${userIdFilter}::int)
          AND (${status}::text IS NULL OR e.status = ${status}::text)
@@ -59,8 +59,8 @@ exports.handler = async (event) => {
     const expenses = rows.map(r => ({
       id: r.id,
       user_id: r.user_id,
-      employee_name: r.employee_name,
-      employee_email: r.employee_email,
+      employee_name: r.employee_name || 'Unknown User',
+      employee_email: r.employee_email || '—',
       expense_date: r.expense_date,
       category: r.category,
       amount: parseFloat(r.amount),
