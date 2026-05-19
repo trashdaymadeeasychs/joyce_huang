@@ -327,6 +327,7 @@ function openReviewModal(expenseId, expense) {
   document.getElementById('review-error').style.display = 'none';
   document.getElementById('approve-btn').disabled = false;
   document.getElementById('reject-btn').disabled = false;
+  document.getElementById('delete-expense-btn').disabled = false;
   document.getElementById('review-modal').style.display = 'flex';
   if (e.gmail_message_id) loadGmailReceipt(e.gmail_message_id, 'modal-receipt-display');
 }
@@ -497,9 +498,26 @@ function initImportView() {
 
 /* ── Event listeners ──────────────────── */
 
+async function deleteExpense() {
+  if (!reviewingExpenseId) return;
+  if (!confirm('Permanently delete this expense? This cannot be undone.')) return;
+  const btn = document.getElementById('delete-expense-btn');
+  btn.disabled = true;
+  try {
+    await API.deleteExpense(reviewingExpenseId);
+    document.getElementById('review-modal').style.display = 'none';
+    loadQueue(queuePage);
+    App.refreshPendingBadge();
+  } catch (err) {
+    alert('Failed to delete expense: ' + err.message);
+    btn.disabled = false;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('approve-btn')?.addEventListener('click', () => submitReview('approved'));
   document.getElementById('reject-btn')?.addEventListener('click', () => submitReview('rejected'));
+  document.getElementById('delete-expense-btn')?.addEventListener('click', deleteExpense);
   document.getElementById('review-close')?.addEventListener('click', () => { document.getElementById('review-modal').style.display = 'none'; });
   document.getElementById('review-cancel')?.addEventListener('click', () => { document.getElementById('review-modal').style.display = 'none'; });
   document.getElementById('review-modal')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.style.display = 'none'; });
