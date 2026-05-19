@@ -14,6 +14,7 @@ exports.handler = async (event) => {
     const rows = await sql()`
       SELECT id, email, full_name, role, is_active, created_at, last_login_at
         FROM users
+       WHERE is_active = true
        ORDER BY full_name ASC
     `;
     return ok({ users: rows });
