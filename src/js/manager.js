@@ -325,6 +325,8 @@ function openReviewModal(expenseId, expense) {
   `;
   document.getElementById('review-notes').value = '';
   document.getElementById('review-error').style.display = 'none';
+  document.getElementById('approve-btn').disabled = false;
+  document.getElementById('reject-btn').disabled = false;
   document.getElementById('review-modal').style.display = 'flex';
   if (e.gmail_message_id) loadGmailReceipt(e.gmail_message_id, 'modal-receipt-display');
 }
@@ -344,6 +346,7 @@ async function submitReview(status) {
   approveBtn.disabled = rejectBtn.disabled = true;
   try {
     await API.updateExpenseStatus({ expense_id: reviewingExpenseId, status, review_notes: notes || null, user_id: userId, category });
+    approveBtn.disabled = rejectBtn.disabled = false;
     document.getElementById('review-modal').style.display = 'none';
     loadQueue(queuePage);
     App.refreshPendingBadge();
