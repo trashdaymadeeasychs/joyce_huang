@@ -404,7 +404,7 @@ function parseRelayCSV(text) {
 
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].match(/(".*?"|[^,]+)(?=,|$)/g) || lines[i].split(',');
+    const cols = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
     const clean = cols.map(c => c.trim().replace(/^"|"$/g, ''));
 
     const txType = clean[idxType] || '';
