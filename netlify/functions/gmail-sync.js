@@ -48,7 +48,7 @@ exports.handler = async (event) => {
 
       const vendor   = r.sender ? r.sender.replace(/<.*>/, '').trim() : 'Unknown Vendor';
       const amount   = r.amountGuess ? Math.abs(parseFloat(r.amountGuess)) : 0.01;
-      const date     = r.date ? new Date(r.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      const date     = r.date ? new Date(parseInt(r.date, 10)).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
       const category = guessCategory(vendor);
       const desc     = vendor + (r.subject ? ` — ${r.subject}` : '');
 
