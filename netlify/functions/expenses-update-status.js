@@ -22,6 +22,8 @@ exports.handler = async (event) => {
   const category     = body.category     ? String(body.category).slice(0, 100)    : null;
   const description  = body.description  ? String(body.description).slice(0, 500) : null;
   const expenseDate  = body.expense_date ? String(body.expense_date).slice(0, 10) : null;
+  const rawAmount    = body.amount != null ? parseFloat(body.amount) : null;
+  const amount       = rawAmount > 0 ? rawAmount : null;
 
   if (!expenseId) return badRequest('expense_id is required');
   if (status !== 'approved' && status !== 'rejected') return badRequest('status must be approved or rejected');
@@ -39,7 +41,8 @@ exports.handler = async (event) => {
              gmail_message_id = COALESCE(${gmailMsgId}::text,   gmail_message_id),
              category         = COALESCE(${category}::text,    category),
              description      = COALESCE(${description}::text, description),
-             expense_date     = COALESCE(${expenseDate}::date, expense_date)
+             expense_date     = COALESCE(${expenseDate}::date, expense_date),
+             amount           = COALESCE(${amount}::numeric,   amount)
        WHERE id = ${expenseId}
        RETURNING id, status, reviewed_at
     `;

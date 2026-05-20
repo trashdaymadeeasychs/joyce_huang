@@ -333,7 +333,7 @@ function openReviewModal(expenseId, expense) {
       <span class="lbl">Employee</span><span>${employeeField}</span>
       <span class="lbl">Date</span><span><input type="date" id="review-date" value="${(e.expense_date || '').slice(0,10)}" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px"></span>
       <span class="lbl">Category</span><span>${buildCategorySelect(e.category)}</span>
-      <span class="lbl">Amount</span><span class="amount">${App.fmt(e.amount)}</span>
+      <span class="lbl">Amount</span><span><input type="number" id="review-amount" value="${e.amount || ''}" min="0.01" step="0.01" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:130px"></span>
       <span class="lbl">Description</span><span><textarea id="review-description" rows="2" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;resize:vertical">${App.escHtml(e.description) || ''}</textarea></span>
       <span class="lbl">Submitted</span><span>${App.fmtDate(e.created_at)}</span>
       <span class="lbl" style="align-self:flex-start;padding-top:4px">Receipt</span><span>${buildReceiptSection(e)}</span>
@@ -356,15 +356,17 @@ async function submitReview(status) {
   const category    = getSelectedCategory();
   const description = document.getElementById('review-description')?.value.trim() || null;
   const expenseDate = document.getElementById('review-date')?.value || null;
+  const amount      = parseFloat(document.getElementById('review-amount')?.value);
 
   if (status === 'rejected' && !notes) { errEl.textContent = 'Please provide a reason for rejection.'; errEl.style.display = 'block'; return; }
   if (assignSelect && !userId) { errEl.textContent = 'Please select an employee before approving or rejecting.'; errEl.style.display = 'block'; return; }
+  if (!amount || amount <= 0) { errEl.textContent = 'Please enter a valid amount greater than $0.'; errEl.style.display = 'block'; return; }
 
   const approveBtn = document.getElementById('approve-btn');
   const rejectBtn = document.getElementById('reject-btn');
   approveBtn.disabled = rejectBtn.disabled = true;
   try {
-    await API.updateExpenseStatus({ expense_id: reviewingExpenseId, status, review_notes: notes || null, user_id: userId, category, description, expense_date: expenseDate });
+    await API.updateExpenseStatus({ expense_id: reviewingExpenseId, status, review_notes: notes || null, user_id: userId, category, description, expense_date: expenseDate, amount });
     approveBtn.disabled = rejectBtn.disabled = false;
     document.getElementById('review-modal').style.display = 'none';
     loadQueue(queuePage);
