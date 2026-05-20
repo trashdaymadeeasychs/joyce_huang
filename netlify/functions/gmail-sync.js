@@ -28,7 +28,7 @@ exports.handler = async (event) => {
     const password   = process.env.RAILWAY_APP_PASSWORD;
 
     const res = await fetch(`${railwayUrl}/receipts`, {
-      headers: { 'x-app-password': password },
+      headers: { 'Authorization': `Bearer ${password}` },
     });
     if (!res.ok) throw new Error(`Railway responded ${res.status}`);
     const { receipts } = await res.json();
