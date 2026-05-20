@@ -565,7 +565,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('delete-expense-btn')?.addEventListener('click', deleteExpense);
   document.getElementById('review-close')?.addEventListener('click', () => { document.getElementById('review-modal').style.display = 'none'; });
   document.getElementById('review-cancel')?.addEventListener('click', () => { document.getElementById('review-modal').style.display = 'none'; });
-  document.getElementById('review-modal')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.style.display = 'none'; });
+  let _reviewMousedownTarget = null;
+  document.getElementById('review-modal')?.addEventListener('mousedown', (e) => { _reviewMousedownTarget = e.target; });
+  document.getElementById('review-modal')?.addEventListener('click', (e) => { if (e.target === e.currentTarget && _reviewMousedownTarget === e.currentTarget) e.currentTarget.style.display = 'none'; });
   document.getElementById('queue-filter-btn')?.addEventListener('click', () => loadQueue(1));
   document.getElementById('all-filter-btn')?.addEventListener('click', () => loadAllExpenses(1));
   document.getElementById('sync-gmail-btn')?.addEventListener('click', syncGmail);
