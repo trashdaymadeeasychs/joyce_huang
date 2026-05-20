@@ -28,9 +28,10 @@ exports.handler = async (event) => {
 
       if (!date || isNaN(amount) || amount <= 0) continue;
 
+      const payee = (desc || category).slice(0, 255);
       await sql()`
-        INSERT INTO expenses (expense_date, category, amount, description, status)
-        VALUES (${date}, ${category}, ${amount}, ${desc}, 'pending')
+        INSERT INTO expenses (expense_date, date, payee, category, amount, description, status)
+        VALUES (${date}, ${date}, ${payee}, ${category}, ${amount}, ${desc}, 'pending')
       `;
       created++;
     }

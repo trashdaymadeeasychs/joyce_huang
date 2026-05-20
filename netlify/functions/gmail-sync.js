@@ -53,8 +53,8 @@ exports.handler = async (event) => {
       const desc     = vendor + (r.subject ? ` — ${r.subject}` : '');
 
       await sql()`
-        INSERT INTO expenses (expense_date, category, amount, description, status, gmail_message_id)
-        VALUES (${date}, ${category}, ${amount}, ${desc.slice(0, 500)}, 'pending', ${r.messageId})
+        INSERT INTO expenses (expense_date, date, payee, category, amount, description, status, gmail_message_id)
+        VALUES (${date}, ${date}, ${vendor.slice(0, 255)}, ${category}, ${amount}, ${desc.slice(0, 500)}, 'pending', ${r.messageId})
       `;
       existing.add(r.messageId);
       created++;

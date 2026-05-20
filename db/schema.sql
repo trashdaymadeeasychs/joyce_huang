@@ -153,9 +153,10 @@ ALTER TABLE expenses ADD COLUMN IF NOT EXISTS review_notes    TEXT;
 ALTER TABLE expenses ADD COLUMN IF NOT EXISTS reviewed_by     INTEGER;
 ALTER TABLE expenses ADD COLUMN IF NOT EXISTS reviewed_at     TIMESTAMPTZ;
 ALTER TABLE expenses ADD COLUMN IF NOT EXISTS receipt_url     TEXT;
-ALTER TABLE expenses ADD COLUMN IF NOT EXISTS receipt_storage VARCHAR(16) DEFAULT 'none';
-ALTER TABLE expenses ADD COLUMN IF NOT EXISTS created_at      TIMESTAMPTZ DEFAULT NOW();
-ALTER TABLE expenses ADD COLUMN IF NOT EXISTS updated_at      TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS receipt_storage    VARCHAR(16) DEFAULT 'none';
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS created_at         TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS updated_at         TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE expenses ADD COLUMN IF NOT EXISTS gmail_message_id   TEXT;
 
 -- Promote NOT NULL where the data allows. Each block is independent and
 -- non-fatal so a partial legacy table cannot abort the whole migration.

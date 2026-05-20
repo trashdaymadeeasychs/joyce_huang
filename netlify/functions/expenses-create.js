@@ -34,11 +34,12 @@ exports.handler = async (event) => {
 
   try {
     const userId = parseInt(session.sub, 10);
+    const payee = (description || category).slice(0, 255);
     const rows = await sql()`
       INSERT INTO expenses
-        (user_id, expense_date, category, amount, description, receipt_url, receipt_storage, status)
+        (user_id, expense_date, date, payee, category, amount, description, receipt_url, receipt_storage, status)
       VALUES
-        (${userId}, ${expense_date}::date, ${category}, ${amount}, ${description},
+        (${userId}, ${expense_date}::date, ${expense_date}, ${payee}, ${category}, ${amount}, ${description},
          ${receipt_url}, ${receipt_storage}, 'pending')
       RETURNING id, user_id, expense_date, category, amount, description, status, created_at
     `;
