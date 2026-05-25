@@ -36,6 +36,9 @@
       <a href="#" data-view="income"         data-roles="employee,manager,admin" class="nav-item">
         <span class="ni">💰</span> Income
       </a>
+      <a href="#" data-view="pnl"            data-roles="employee,manager,admin" class="nav-item">
+        <span class="ni">📊</span> P&amp;L Report
+      </a>
       <!-- Manager nav -->
       <div class="nav-section-label" data-roles="manager,admin">Manager</div>
       <a href="#" data-view="mgr-queue"      data-roles="manager,admin" class="nav-item">
@@ -157,22 +160,7 @@
                   </div>
                   <div class="form-group">
                     <label>Province</label>
-                    <select id="exp-province">
-                      <option value="">— Province/Territory —</option>
-                      <option value="AB">AB — Alberta (GST 5%)</option>
-                      <option value="BC">BC — British Columbia (GST 5% + PST 7%)</option>
-                      <option value="MB">MB — Manitoba (GST 5% + PST 7%)</option>
-                      <option value="NB">NB — New Brunswick (HST 15%)</option>
-                      <option value="NL">NL — Newfoundland &amp; Labrador (HST 15%)</option>
-                      <option value="NS">NS — Nova Scotia (HST 15%)</option>
-                      <option value="NT">NT — Northwest Territories (GST 5%)</option>
-                      <option value="NU">NU — Nunavut (GST 5%)</option>
-                      <option value="ON">ON — Ontario (HST 13%)</option>
-                      <option value="PE">PE — Prince Edward Island (HST 15%)</option>
-                      <option value="QC">QC — Quebec (GST 5% + QST 9.975%)</option>
-                      <option value="SK">SK — Saskatchewan (GST 5% + PST 6%)</option>
-                      <option value="YT">YT — Yukon (GST 5%)</option>
-                    </select>
+                    <select id="exp-province"><!-- populated by expenses.js from config.js --></select>
                   </div>
                 </div>
                 <div class="form-row">
@@ -363,6 +351,11 @@
           </div>
           <div class="pager" id="hist-pager"></div>
         </div>
+      </section>
+
+      <!-- ─── P&L Report ─── -->
+      <section id="view-pnl" class="view" style="display:none">
+        <div id="pnl-wrap"></div>
       </section>
 
       <!-- ─── Income ─── -->
@@ -638,6 +631,7 @@
 <script src="js/manager.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/income.js"></script>
+<script src="js/pnl.js"></script>
 <script src="js/app.js"></script>
 
 </body>

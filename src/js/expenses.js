@@ -155,13 +155,15 @@ async function loadRecentExpenses() {
     const preview     = document.getElementById('upload-preview');
     if (!form) return;
 
-    // Populate province dropdown
+    // Populate province dropdown — default Alberta
     const provSel = document.getElementById('exp-province');
     if (provSel) {
+      provSel.innerHTML = '<option value="">— Province/Territory —</option>';
       cfg.provinces.forEach(p => {
         const opt = new Option(`${p.name} (${p.gstHstLabel || p.code})`, p.code);
         provSel.add(opt);
       });
+      provSel.value = 'AB';
     }
 
     // Populate payment method dropdown
@@ -170,11 +172,17 @@ async function loadRecentExpenses() {
       cfg.paymentMethods.forEach(m => { const opt = new Option(m, m); pmSel.add(opt); });
     }
 
-    // Default date and tax year
-    const today = new Date();
-    document.getElementById('exp-date').valueAsDate = today;
+    // Populate tax year dropdown — fixed range 2026–2028, default 2026
+    document.getElementById('exp-date').valueAsDate = new Date();
     const taxYearEl = document.getElementById('exp-tax-year');
-    if (taxYearEl) taxYearEl.value = today.getFullYear();
+    if (taxYearEl) {
+      taxYearEl.innerHTML = '';
+      [2028, 2027, 2026].forEach(y => {
+        const opt = new Option(y, y);
+        if (y === 2026) opt.selected = true;
+        taxYearEl.add(opt);
+      });
+    }
 
     // Category → subcategory cascade
     const catSel    = document.getElementById('exp-category');
@@ -282,7 +290,8 @@ async function loadRecentExpenses() {
     function resetForm() {
       form.reset();
       document.getElementById('exp-date').valueAsDate = new Date();
-      if (taxYearEl) taxYearEl.value = new Date().getFullYear();
+      if (taxYearEl) taxYearEl.value = 2026;
+      if (provSel)   provSel.value   = 'AB';
       preview.style.display = 'none';
       placeholder.style.display = '';
       if (vehicleGrp) vehicleGrp.style.display = 'none';
@@ -313,7 +322,7 @@ async function loadRecentExpenses() {
       const deductPct   = parseFloat(document.getElementById('exp-deductible-pct')?.value ?? 100);
       const bizPurpose  = document.getElementById('exp-business-purpose')?.value.trim() || null;
       const clientProp  = document.getElementById('exp-client-property')?.value.trim() || null;
-      const taxYear     = parseInt(document.getElementById('exp-tax-year')?.value) || new Date().getFullYear();
+      const taxYear     = parseInt(document.getElementById('exp-tax-year')?.value) || 2026;
       const file        = fileInput.files[0];
       const isCapital   = cfg.isCapitalAsset(category);
       const ccaClass    = document.getElementById('exp-cca-class')?.value || null;
@@ -395,6 +404,7 @@ async function loadHistory(page = 1) {
 
   const params = {
     page, limit: 20,
+    tax_year:  document.getElementById('hist-year')?.value      || '',
     status:    document.getElementById('hist-status')?.value    || '',
     category:  document.getElementById('hist-category')?.value  || '',
     date_from: document.getElementById('hist-from')?.value      || '',
@@ -432,5 +442,11 @@ window.loadEmpDashboard = loadEmpDashboard;
 window.loadHistory      = loadHistory;
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Populate hist-year select with fixed 2026–2028 range
+  const histYearEl = document.getElementById('hist-year');
+  if (histYearEl) {
+    histYearEl.innerHTML = '<option value="">All Years</option>';
+    [2028, 2027, 2026].forEach(y => histYearEl.add(new Option(y, y)));
+  }
   document.getElementById('hist-filter-btn')?.addEventListener('click', () => loadHistory(1));
 });

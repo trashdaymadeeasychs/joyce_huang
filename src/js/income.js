@@ -7,7 +7,7 @@ const MONTHS = [
 ];
 const DEFAULT_ROWS_PER_MONTH = 6;
 
-let incomeYear    = new Date().getFullYear();
+let incomeYear    = 2026;
 let incomeRecords = [];   // flat array of all saved records for the year
 
 /* ══════════════════════════════════════════════════
@@ -20,11 +20,9 @@ async function loadIncomePage() {
 
   // Build the year selector bar once (first visit)
   if (!document.getElementById('income-year')) {
-    const now = new Date().getFullYear();
-    let opts = '';
-    for (let y = now; y >= now - 4; y--) {
-      opts += `<option value="${y}"${y === now ? ' selected' : ''}>${y}</option>`;
-    }
+    const opts = [2028, 2027, 2026]
+      .map(y => `<option value="${y}"${y === 2026 ? ' selected' : ''}>${y}</option>`)
+      .join('');
     contentWrap.innerHTML = `
       <div class="income-year-bar" style="margin-bottom:16px">
         <label style="font-size:13px;font-weight:600;color:var(--text-muted)">Tax Year</label>
