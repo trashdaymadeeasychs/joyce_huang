@@ -1,22 +1,12 @@
-﻿/* API client — wraps all Netlify Function calls */
+/* API client — wraps all Netlify Function calls */
 'use strict';
 
 const BASE = '/.netlify/functions';
 
-async function authHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
-  const identity = window.netlifyIdentity;
-  const user = identity && identity.currentUser && identity.currentUser();
-  if (user && user.jwt) {
-    headers.Authorization = 'Bearer ' + await user.jwt();
-  }
-  return headers;
-}
-
 async function request(path, options = {}) {
   const res = await fetch(BASE + path, {
     credentials: 'same-origin',
-    headers: { ...(await authHeaders()), ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,
   });
 
@@ -33,26 +23,32 @@ async function request(path, options = {}) {
 
 const API = {
   // Auth
-  login(email, password)    { return request('/auth-login',  { method: 'POST', body: JSON.stringify({ email, password }) }); },
-  logout()                  { return request('/auth-logout', { method: 'POST' }); },
-  me()                      { return request('/auth-me'); },
+  login(email, password) { return request('/auth-login',  { method: 'POST', body: JSON.stringify({ email, password }) }); },
+  logout()               { return request('/auth-logout', { method: 'POST' }); },
+  me()                   { return request('/auth-me'); },
 
   // Expenses
   getExpenses(params = {})  { return request('/expenses-list?' + new URLSearchParams(params)); },
-  createExpense(data)       { return request('/expenses-create', { method: 'POST', body: JSON.stringify(data) }); },
+  createExpense(data)       { return request('/expenses-create',        { method: 'POST', body: JSON.stringify(data) }); },
   updateExpenseStatus(data) { return request('/expenses-update-status', { method: 'POST', body: JSON.stringify(data) }); },
-  updateExpense(data)       { return request('/expense-update',  { method: 'POST', body: JSON.stringify(data) }); },
-  deleteExpense(expenseId)  { return request('/expense-delete',  { method: 'POST', body: JSON.stringify({ expense_id: expenseId }) }); },
-  importExpenses(expenses)  { return request('/expenses-import', { method: 'POST', body: JSON.stringify({ expenses }) }); },
+  updateExpense(data)       { return request('/expense-update',         { method: 'POST', body: JSON.stringify(data) }); },
+  deleteExpense(id)         { return request('/expense-delete',         { method: 'POST', body: JSON.stringify({ expense_id: id }) }); },
+  importExpenses(expenses)  { return request('/expenses-import',        { method: 'POST', body: JSON.stringify({ expenses }) }); },
+
+  // Income
+  getIncome(params = {})    { return request('/income-list?' + new URLSearchParams(params)); },
+  createIncome(data)        { return request('/income-create', { method: 'POST', body: JSON.stringify(data) }); },
+  updateIncome(data)        { return request('/income-update', { method: 'POST', body: JSON.stringify(data) }); },
+  deleteIncome(id)          { return request('/income-delete', { method: 'POST', body: JSON.stringify({ income_id: id }) }); },
 
   // Users
-  getUsers()                { return request('/users-list'); },
-  createUser(data)          { return request('/users-create', { method: 'POST', body: JSON.stringify(data) }); },
-  updateUser(data)          { return request('/users-update', { method: 'POST', body: JSON.stringify(data) }); },
-  deleteUser(userId)        { return request('/users-delete', { method: 'POST', body: JSON.stringify({ user_id: userId }) }); },
+  getUsers()             { return request('/users-list'); },
+  createUser(data)       { return request('/users-create', { method: 'POST', body: JSON.stringify(data) }); },
+  updateUser(data)       { return request('/users-update', { method: 'POST', body: JSON.stringify(data) }); },
+  deleteUser(id)         { return request('/users-delete', { method: 'POST', body: JSON.stringify({ user_id: id }) }); },
 
   // Dashboard
-  getDashboard(year)        { return request('/dashboard-summary' + (year ? `?year=${year}` : '')); },
+  getDashboard(year)     { return request('/dashboard-summary' + (year ? `?year=${year}` : '')); },
 
   // Gmail receipts
   getGmailReceipt(messageId) { return request('/receipt-gmail?message_id=' + encodeURIComponent(messageId)); },
@@ -76,9 +72,7 @@ const API = {
             }),
           });
           resolve(result);
-        } catch (err) {
-          reject(err);
-        }
+        } catch (err) { reject(err); }
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);

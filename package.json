@@ -1,7 +1,7 @@
 {
-  "name": "tdme-expenses",
+  "name": "jh-realtor-expenses",
   "version": "1.0.0",
-  "description": "Trash Day Made Easy — Expense Tracker",
+  "description": "Joyce Huang — Canadian Realtor Expense Tracker",
   "private": true,
   "engines": {
     "node": ">=18"

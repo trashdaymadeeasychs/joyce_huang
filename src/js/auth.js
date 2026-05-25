@@ -1,25 +1,15 @@
-﻿/* Auth module — login form, session state */
+/* Auth module — standalone JWT cookie login */
 'use strict';
 
 const Auth = (() => {
   let currentUser = null;
 
-  function getUser() { return currentUser; }
+  function getUser()  { return currentUser; }
   function setUser(u) { currentUser = u; }
-  function clearUser() { currentUser = null; }
+  function clearUser(){ currentUser = null; }
 
+  /* Try to restore session from existing JWT cookie */
   async function init() {
-    const identity = window.netlifyIdentity;
-    if (identity && identity.init) identity.init();
-    let identityUser = identity && identity.currentUser && identity.currentUser();
-    if (identity && !identityUser) {
-      identityUser = await new Promise((resolve) => {
-        identity.on('init', (user) => resolve(user || identity.currentUser()));
-        setTimeout(() => resolve(identity.currentUser && identity.currentUser()), 1500);
-      });
-    }
-    if (!identityUser) return null;
-
     try {
       const { user } = await API.me();
       setUser(user);
@@ -30,39 +20,33 @@ const Auth = (() => {
   }
 
   async function logout() {
-    try {
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.logout();
-      } else {
-        await API.logout();
-      }
-    } catch {}
+    try { await API.logout(); } catch {}
     clearUser();
-    window.location.href = '/';
+    App.showLogin();
   }
 
+  /* Wire up the login form */
   function initLoginForm() {
-    const form    = document.getElementById('login-form');
-    const errEl   = document.getElementById('login-error');
-    const btn     = document.getElementById('login-btn');
+    const form   = document.getElementById('login-form');
+    const errEl  = document.getElementById('login-error');
+    const btn    = document.getElementById('login-btn');
+    if (!form) return;
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email    = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
-
       errEl.style.display = 'none';
-      btn.disabled = true;
+      btn.disabled    = true;
       btn.textContent = 'Signing in…';
-
       try {
         const { user } = await API.login(email, password);
         setUser(user);
         App.showApp(user);
       } catch (err) {
-        errEl.textContent = err.message || 'Login failed. Check your credentials.';
+        errEl.textContent   = err.message || 'Login failed. Check your credentials.';
         errEl.style.display = 'block';
-        btn.disabled = false;
+        btn.disabled    = false;
         btn.textContent = 'Sign In';
       }
     });

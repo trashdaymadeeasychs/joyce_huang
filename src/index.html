@@ -1,13 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expense Tracker — Trash Day Made Easy</title>
+  <title>Joyce Huang — Realtor Expense Tracker</title>
   <link rel="stylesheet" href="styles/main.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  <script src="../../assets/js/auth-guard.js"></script>
 </head>
 <body>
 
@@ -17,10 +15,10 @@
 <div id="login-screen" class="login-screen" style="display:none">
   <div class="login-card">
     <div class="login-logo">
-      <div class="logo-icon">🗑️</div>
+      <div class="logo-icon">🏡</div>
       <div class="logo-text">
-        <span class="brand">Trash Day Made Easy</span>
-        <span class="sub">Expense Tracker</span>
+        <span class="brand">Joyce Huang</span>
+        <span class="sub">Realtor Expense Tracker</span>
       </div>
     </div>
     <h2 class="login-heading">Sign in to your account</h2>
@@ -28,7 +26,7 @@
     <form id="login-form">
       <div class="form-group">
         <label for="login-email">Email address</label>
-        <input type="email" id="login-email" autocomplete="username" required placeholder="you@trashdaymadeeasy.com">
+        <input type="email" id="login-email" autocomplete="username" required placeholder="you@example.com">
       </div>
       <div class="form-group">
         <label for="login-password">Password</label>
@@ -47,9 +45,9 @@
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="sidebar-icon">🗑️</div>
-      <div class="brand">Trash Day Made Easy</div>
-      <div class="sub">Expense Tracker</div>
+      <div class="sidebar-icon">🏡</div>
+      <div class="brand">Joyce Huang</div>
+      <div class="sub">Realtor Expense Tracker</div>
     </div>
 
     <nav id="main-nav">
@@ -62,6 +60,9 @@
       </a>
       <a href="#" data-view="emp-history"    data-roles="employee,manager,admin" class="nav-item">
         <span class="ni">📋</span> My Expenses
+      </a>
+      <a href="#" data-view="income"         data-roles="employee,manager,admin" class="nav-item">
+        <span class="ni">💰</span> Income
       </a>
       <!-- Manager nav -->
       <div class="nav-section-label" data-roles="manager,admin">Manager</div>
@@ -100,6 +101,7 @@
       <!-- ─── Employee: Dashboard ─── -->
       <section id="view-emp-dashboard" class="view" style="display:none">
         <div class="stat-grid" id="emp-stat-grid"></div>
+        <div id="emp-gst-bar"></div>
         <div class="report-grid">
           <div class="card">
             <div class="card-header"><span class="card-title">Monthly Spend</span></div>
@@ -117,45 +119,198 @@
           </div>
           <div id="emp-recent-list"></div>
         </div>
+        <div class="disclaimer">
+          <strong>Disclaimer:</strong> This tool is for expense organisation only and is <strong>not</strong> tax, legal, or accounting advice.
+          Deductibility rules, CCA classes, GST/HST ITC eligibility, and vehicle proration must be confirmed with a qualified
+          Canadian tax professional or accountant.
+        </div>
       </section>
 
       <!-- ─── Employee: Submit Expense ─── -->
       <section id="view-emp-submit" class="view" style="display:none">
-        <div class="card" style="max-width:600px">
+        <div class="card" style="max-width:660px">
           <div class="card-header"><span class="card-title">Submit New Expense</span></div>
           <div class="card-body">
             <div id="submit-success" class="alert alert-success" style="display:none"></div>
             <div id="submit-error"   class="alert alert-error"   style="display:none"></div>
             <form id="expense-form">
+
+              <!-- Basic info -->
               <div class="form-row">
                 <div class="form-group">
                   <label>Date *</label>
                   <input type="date" id="exp-date" required>
                 </div>
                 <div class="form-group">
-                  <label>Amount ($) *</label>
-                  <input type="number" id="exp-amount" step="0.01" min="0.01" required placeholder="0.00">
+                  <label>Tax Year *</label>
+                  <select id="exp-tax-year"></select>
                 </div>
               </div>
+
               <div class="form-group">
-                <label>Category *</label>
-                <select id="exp-category" required>
-                  <option value="">— Select category —</option>
-                  <option>Fuel</option>
-                  <option>Vehicle Maintenance</option>
-                  <option>Supplies &amp; Equipment</option>
-                  <option>Meals &amp; Entertainment</option>
-                  <option>Software &amp; Technology</option>
-                  <option>Uniforms</option>
-                  <option>Office Expenses</option>
-                  <option>Marketing &amp; Advertising</option>
-                  <option>Other</option>
-                </select>
+                <label>Vendor / Payee</label>
+                <input type="text" id="exp-vendor" placeholder="e.g. Petro-Canada, RE/MAX, Rogers">
               </div>
-              <div class="form-group">
-                <label>Description / Notes</label>
-                <textarea id="exp-description" rows="3" placeholder="What was this expense for?"></textarea>
+
+              <!-- Category / Subcategory -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Category *</label>
+                  <select id="exp-category" required>
+                    <option value="">— Select category —</option>
+                    <option>Vehicle</option>
+                    <option>Marketing</option>
+                    <option>Professional</option>
+                    <option>Technology</option>
+                    <option>Office</option>
+                    <option>Travel</option>
+                    <option>Client Relations</option>
+                    <option>Capital Assets</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Subcategory</label>
+                  <select id="exp-subcategory">
+                    <option value="">— Select category first —</option>
+                  </select>
+                </div>
               </div>
+
+              <!-- Amounts -->
+              <div class="form-section">
+                <div class="form-section-title">Amounts (CAD)</div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Amount (excl. tax) *</label>
+                    <input type="number" id="exp-amount" step="0.01" min="0.01" required placeholder="0.00">
+                  </div>
+                  <div class="form-group">
+                    <label>Province</label>
+                    <select id="exp-province">
+                      <option value="">— Province/Territory —</option>
+                      <option value="AB">AB — Alberta (GST 5%)</option>
+                      <option value="BC">BC — British Columbia (GST 5% + PST 7%)</option>
+                      <option value="MB">MB — Manitoba (GST 5% + PST 7%)</option>
+                      <option value="NB">NB — New Brunswick (HST 15%)</option>
+                      <option value="NL">NL — Newfoundland &amp; Labrador (HST 15%)</option>
+                      <option value="NS">NS — Nova Scotia (HST 15%)</option>
+                      <option value="NT">NT — Northwest Territories (GST 5%)</option>
+                      <option value="NU">NU — Nunavut (GST 5%)</option>
+                      <option value="ON">ON — Ontario (HST 13%)</option>
+                      <option value="PE">PE — Prince Edward Island (HST 15%)</option>
+                      <option value="QC">QC — Quebec (GST 5% + QST 9.975%)</option>
+                      <option value="SK">SK — Saskatchewan (GST 5% + PST 6%)</option>
+                      <option value="YT">YT — Yukon (GST 5%)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>GST / HST Amount</label>
+                    <input type="number" id="exp-gst-hst" step="0.01" min="0" placeholder="0.00">
+                    <div class="helper-text">May be claimable as an ITC if you are GST/HST registered.</div>
+                  </div>
+                  <div class="form-group">
+                    <label>PST / QST Amount</label>
+                    <input type="number" id="exp-pst-qst" step="0.01" min="0" placeholder="0.00">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Deductibility -->
+              <div class="form-section">
+                <div class="form-section-title">Deductibility</div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Deductible % *</label>
+                    <input type="number" id="exp-deduct-pct" step="1" min="0" max="100" value="100" placeholder="100">
+                    <div class="helper-text" id="deduct-helper"></div>
+                  </div>
+                  <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="exp-payment">
+                      <option value="">— Select —</option>
+                      <option>Credit Card</option>
+                      <option>Debit Card</option>
+                      <option>Cash</option>
+                      <option>E-Transfer</option>
+                      <option>Cheque</option>
+                      <option>Bank Transfer</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Business Purpose</label>
+                  <input type="text" id="exp-biz-purpose" placeholder="Brief reason this expense is business-related">
+                </div>
+                <div class="form-group">
+                  <label>Client / Property Reference</label>
+                  <input type="text" id="exp-client-prop" placeholder="e.g. 123 Main St, Smith deal">
+                </div>
+              </div>
+
+              <!-- Vehicle KM group (shown when Vehicle category) -->
+              <div class="km-group" id="km-group">
+                <div class="group-title">🚗 Vehicle — Kilometre Log</div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Odometer Start (km)</label>
+                    <input type="number" id="exp-odo-start" step="1" min="0" placeholder="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Odometer End (km)</label>
+                    <input type="number" id="exp-odo-end" step="1" min="0" placeholder="0">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Business km</label>
+                    <input type="number" id="exp-biz-km" step="0.1" min="0" placeholder="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Business Use %</label>
+                    <input type="number" id="exp-biz-pct" step="0.1" min="0" max="100" placeholder="0">
+                  </div>
+                </div>
+                <div class="km-calc" id="km-calc" style="display:none"></div>
+                <div class="helper-text warning" style="display:block;margin-top:8px">
+                  Vehicle expenses should be prorated by your annual business-use %. Confirm with your accountant.
+                </div>
+              </div>
+
+              <!-- Capital Asset group -->
+              <div class="cca-group" id="cca-group">
+                <div class="group-title">🏢 Capital Asset</div>
+                <div class="form-group">
+                  <label>CCA Class</label>
+                  <select id="exp-cca-class">
+                    <option value="">— Select CCA class —</option>
+                    <option value="Class 8 (20%)">Class 8 (20%) — Office furniture &amp; equipment</option>
+                    <option value="Class 10 (30%)">Class 10 (30%) — Motor vehicles</option>
+                    <option value="Class 10.1 (30%)">Class 10.1 (30%) — Passenger vehicles &gt;$36k</option>
+                    <option value="Class 12 (100%)">Class 12 (100%) — Small tools, software &lt;$500</option>
+                    <option value="Class 50 (55%)">Class 50 (55%) — Computer hardware</option>
+                    <option value="Class 14.1 (5%)">Class 14.1 (5%) — Goodwill / intangible</option>
+                    <option value="Other">Other — confirm with accountant</option>
+                  </select>
+                </div>
+                <div class="helper-text warning" style="display:block">
+                  Capital assets are not fully deducted in the year of purchase — they are depreciated via CCA.
+                  Confirm class and handling with your accountant.
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <div class="form-section">
+                <div class="form-section-title">Notes</div>
+                <div class="form-group">
+                  <label>Description / Notes</label>
+                  <textarea id="exp-description" rows="3" placeholder="Additional details about this expense"></textarea>
+                </div>
+              </div>
+
+              <!-- Receipt -->
               <div class="form-group">
                 <label>Receipt (optional)</label>
                 <div class="upload-area" id="upload-area">
@@ -168,11 +323,18 @@
                   <div id="upload-preview" style="display:none"></div>
                 </div>
               </div>
+
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary" id="submit-btn">Submit Expense</button>
                 <button type="button" class="btn" id="reset-btn">Clear</button>
               </div>
+
             </form>
+
+            <div class="disclaimer">
+              <strong>Note:</strong> This tool is for organisation only and is not tax, legal, or accounting advice.
+              Confirm all deductions with a qualified Canadian tax professional.
+            </div>
           </div>
         </div>
       </section>
@@ -183,6 +345,10 @@
           <div class="card-header">
             <span class="card-title">My Expenses</span>
             <div class="filters">
+              <div class="year-select-wrap">
+                <label>Year</label>
+                <select id="hist-year"></select>
+              </div>
               <select id="hist-status">
                 <option value="">All Statuses</option>
                 <option value="pending">Pending</option>
@@ -191,27 +357,34 @@
               </select>
               <select id="hist-category">
                 <option value="">All Categories</option>
-                <option>Fuel</option>
-                <option>Vehicle Maintenance</option>
-                <option>Supplies &amp; Equipment</option>
-                <option>Meals &amp; Entertainment</option>
-                <option>Software &amp; Technology</option>
-                <option>Uniforms</option>
-                <option>Office Expenses</option>
-                <option>Marketing &amp; Advertising</option>
-                <option>Other</option>
+                <option>Vehicle</option>
+                <option>Marketing</option>
+                <option>Professional</option>
+                <option>Technology</option>
+                <option>Office</option>
+                <option>Travel</option>
+                <option>Client Relations</option>
+                <option>Capital Assets</option>
               </select>
               <input type="date" id="hist-from" placeholder="From">
               <input type="date" id="hist-to"   placeholder="To">
               <button class="btn" id="hist-filter-btn">Filter</button>
             </div>
           </div>
-          <div id="hist-table-wrap">
+          <div id="hist-table-wrap" style="overflow-x:auto">
             <table>
               <thead>
                 <tr>
-                  <th>Date</th><th>Category</th><th>Amount</th>
-                  <th>Description</th><th>Status</th><th>Notes</th><th>Receipt</th>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Subcategory</th>
+                  <th>Vendor</th>
+                  <th>Amount</th>
+                  <th>GST/HST</th>
+                  <th>Deductible</th>
+                  <th>Status</th>
+                  <th>Notes</th>
+                  <th>Receipt</th>
                 </tr>
               </thead>
               <tbody id="hist-tbody"></tbody>
@@ -221,9 +394,20 @@
         </div>
       </section>
 
+      <!-- ─── Income ─── -->
+      <section id="view-income" class="view" style="display:none">
+        <div id="income-summary-wrap"></div>
+        <div id="income-content-wrap"></div>
+        <div class="disclaimer">
+          <strong>Note:</strong> This tool is for income organisation only and is not tax, legal, or accounting advice.
+          GST/HST remittance obligations and income reporting must be confirmed with a qualified Canadian accountant.
+        </div>
+      </section>
+
       <!-- ─── Manager: Pending Queue ─── -->
       <section id="view-mgr-queue" class="view" style="display:none">
         <div class="stat-grid" id="mgr-stat-grid"></div>
+        <div id="mgr-gst-bar"></div>
         <div class="card">
           <div class="card-header">
             <span class="card-title">Pending Approvals</span>
@@ -233,15 +417,14 @@
               </select>
               <select id="queue-cat">
                 <option value="">All Categories</option>
-                <option>Fuel</option>
-                <option>Vehicle Maintenance</option>
-                <option>Supplies &amp; Equipment</option>
-                <option>Meals &amp; Entertainment</option>
-                <option>Software &amp; Technology</option>
-                <option>Uniforms</option>
-                <option>Office Expenses</option>
-                <option>Marketing &amp; Advertising</option>
-                <option>Other</option>
+                <option>Vehicle</option>
+                <option>Marketing</option>
+                <option>Professional</option>
+                <option>Technology</option>
+                <option>Office</option>
+                <option>Travel</option>
+                <option>Client Relations</option>
+                <option>Capital Assets</option>
               </select>
               <button class="btn" id="queue-filter-btn">Filter</button>
               <button class="btn btn-primary" id="sync-gmail-btn" style="margin-left:8px">⟳ Sync Gmail</button>
@@ -252,12 +435,19 @@
             <div class="empty-icon">✅</div>
             <p>No pending expenses — all caught up!</p>
           </div>
-          <div id="queue-table-wrap">
+          <div id="queue-table-wrap" style="overflow-x:auto">
             <table>
               <thead>
                 <tr>
-                  <th>Date</th><th>Employee</th><th>Category</th><th>Amount</th>
-                  <th>Description</th><th>Receipt</th><th>Actions</th>
+                  <th>Date</th>
+                  <th>Employee</th>
+                  <th>Category</th>
+                  <th>Vendor</th>
+                  <th>Amount</th>
+                  <th>GST/HST</th>
+                  <th>Description</th>
+                  <th>Receipt</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="queue-tbody"></tbody>
@@ -273,6 +463,10 @@
           <div class="card-header">
             <span class="card-title">All Expenses</span>
             <div class="filters">
+              <div class="year-select-wrap">
+                <label>Year</label>
+                <select id="all-year"></select>
+              </div>
               <select id="all-status">
                 <option value="">All Statuses</option>
                 <option value="pending">Pending</option>
@@ -284,27 +478,36 @@
               </select>
               <select id="all-cat">
                 <option value="">All Categories</option>
-                <option>Fuel</option>
-                <option>Vehicle Maintenance</option>
-                <option>Supplies &amp; Equipment</option>
-                <option>Meals &amp; Entertainment</option>
-                <option>Software &amp; Technology</option>
-                <option>Uniforms</option>
-                <option>Office Expenses</option>
-                <option>Marketing &amp; Advertising</option>
-                <option>Other</option>
+                <option>Vehicle</option>
+                <option>Marketing</option>
+                <option>Professional</option>
+                <option>Technology</option>
+                <option>Office</option>
+                <option>Travel</option>
+                <option>Client Relations</option>
+                <option>Capital Assets</option>
               </select>
               <input type="date" id="all-from">
               <input type="date" id="all-to">
               <button class="btn" id="all-filter-btn">Filter</button>
             </div>
           </div>
-          <div id="all-table-wrap">
+          <div id="all-table-wrap" style="overflow-x:auto">
             <table>
               <thead>
                 <tr>
-                  <th>Date</th><th>Employee</th><th>Category</th><th>Amount</th>
-                  <th>Description</th><th>Status</th><th>Reviewed By</th><th>Notes</th><th>Receipt</th><th></th>
+                  <th>Date</th>
+                  <th>Employee</th>
+                  <th>Category</th>
+                  <th>Vendor</th>
+                  <th>Amount</th>
+                  <th>GST/HST</th>
+                  <th>Deductible</th>
+                  <th>Status</th>
+                  <th>Reviewed By</th>
+                  <th>Notes</th>
+                  <th>Receipt</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="all-tbody"></tbody>
@@ -331,13 +534,13 @@
           <div class="card-header"><span class="card-title">Import Bank Statement</span></div>
           <div class="card-body" style="padding:20px">
             <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px">
-              Upload a Relay bank statement CSV. Only card spend transactions will be imported as pending expenses.
+              Upload a bank statement CSV. Transactions will be imported as pending expenses for review.
             </p>
             <div id="import-dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s">
               <input type="file" id="import-file-input" accept=".csv" style="display:none">
               <div style="font-size:32px;margin-bottom:8px">📥</div>
               <div style="font-weight:600;color:var(--text)">Drop CSV here or click to browse</div>
-              <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Relay bank statement CSV format</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Bank statement CSV format</div>
             </div>
             <div id="import-status" class="alert" style="display:none;margin-top:12px"></div>
             <div id="import-preview" style="margin-top:16px;overflow-x:auto"></div>
@@ -375,7 +578,7 @@
      REVIEW MODAL
 ════════════════════════════════════════ -->
 <div id="review-modal" class="modal-overlay" style="display:none">
-  <div class="modal">
+  <div class="modal modal-wide">
     <div class="modal-header">
       <h3 id="review-modal-title">Review Expense</h3>
       <button class="modal-close" id="review-close">✕</button>
@@ -457,11 +660,13 @@
 </div>
 
 <!-- Scripts -->
+<script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/expenses.js"></script>
 <script src="js/manager.js"></script>
 <script src="js/admin.js"></script>
+<script src="js/income.js"></script>
 <script src="js/app.js"></script>
 
 </body>
