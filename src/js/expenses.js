@@ -155,13 +155,15 @@ async function loadRecentExpenses() {
     const preview     = document.getElementById('upload-preview');
     if (!form) return;
 
-    // Populate province dropdown
+    // Populate province dropdown — default Alberta
     const provSel = document.getElementById('exp-province');
     if (provSel) {
+      provSel.innerHTML = '<option value="">— Province/Territory —</option>';
       cfg.provinces.forEach(p => {
         const opt = new Option(`${p.name} (${p.gstHstLabel || p.code})`, p.code);
         provSel.add(opt);
       });
+      provSel.value = 'AB';
     }
 
     // Populate payment method dropdown
@@ -170,11 +172,19 @@ async function loadRecentExpenses() {
       cfg.paymentMethods.forEach(m => { const opt = new Option(m, m); pmSel.add(opt); });
     }
 
-    // Default date and tax year
+    // Populate tax year dropdown — default current year
     const today = new Date();
+    const currentYear = today.getFullYear();
     document.getElementById('exp-date').valueAsDate = today;
     const taxYearEl = document.getElementById('exp-tax-year');
-    if (taxYearEl) taxYearEl.value = today.getFullYear();
+    if (taxYearEl) {
+      taxYearEl.innerHTML = '';
+      for (let y = currentYear + 1; y >= currentYear - 3; y--) {
+        const opt = new Option(y, y);
+        if (y === currentYear) opt.selected = true;
+        taxYearEl.add(opt);
+      }
+    }
 
     // Category → subcategory cascade
     const catSel    = document.getElementById('exp-category');
@@ -283,6 +293,7 @@ async function loadRecentExpenses() {
       form.reset();
       document.getElementById('exp-date').valueAsDate = new Date();
       if (taxYearEl) taxYearEl.value = new Date().getFullYear();
+      if (provSel)   provSel.value   = 'AB';
       preview.style.display = 'none';
       placeholder.style.display = '';
       if (vehicleGrp) vehicleGrp.style.display = 'none';
