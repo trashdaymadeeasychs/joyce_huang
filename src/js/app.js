@@ -128,8 +128,6 @@ const App = (() => {
     document.getElementById('receipt-modal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
     });
-    document.getElementById('sidebar-user-info').innerHTML =
-      `<strong>${escHtml(user.name)}</strong>${roleBadge(user.role)}`;
   }
 
   function showLogin() { /* no-op: no login screen in single-user mode */ }
