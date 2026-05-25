@@ -36,6 +36,9 @@
       <a href="#" data-view="income"         data-roles="employee,manager,admin" class="nav-item">
         <span class="ni">💰</span> Income
       </a>
+      <a href="#" data-view="pnl"            data-roles="employee,manager,admin" class="nav-item">
+        <span class="ni">📊</span> P&amp;L Report
+      </a>
       <!-- Manager nav -->
       <div class="nav-section-label" data-roles="manager,admin">Manager</div>
       <a href="#" data-view="mgr-queue"      data-roles="manager,admin" class="nav-item">
@@ -350,6 +353,11 @@
         </div>
       </section>
 
+      <!-- ─── P&L Report ─── -->
+      <section id="view-pnl" class="view" style="display:none">
+        <div id="pnl-wrap"></div>
+      </section>
+
       <!-- ─── Income ─── -->
       <section id="view-income" class="view" style="display:none">
         <div id="income-summary-wrap"></div>
@@ -623,6 +631,7 @@
 <script src="js/manager.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/income.js"></script>
+<script src="js/pnl.js"></script>
 <script src="js/app.js"></script>
 
 </body>

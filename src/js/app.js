@@ -90,6 +90,7 @@ const App = (() => {
       'emp-submit':    'Submit Expense',
       'emp-history':   'My Expenses',
       'income':        'Income',
+      'pnl':           'P&L Report',
       'mgr-queue':     'Pending Review',
       'mgr-all':       'All Expenses',
       'mgr-import':    'Import Statement',
@@ -100,6 +101,7 @@ const App = (() => {
     if (viewId === 'emp-dashboard') loadEmpDashboard();
     if (viewId === 'emp-history')   loadHistory(1);
     if (viewId === 'income')        loadIncomePage();
+    if (viewId === 'pnl')           loadPnlPage();
     if (viewId === 'mgr-queue')     loadQueue(1);
     if (viewId === 'mgr-all')       loadAllExpenses(1);
     if (viewId === 'mgr-import')    initImportView();
