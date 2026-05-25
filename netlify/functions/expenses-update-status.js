@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { sql } = require('./_shared/db');
 const { requireAuth } = require('./_shared/auth');
@@ -7,7 +7,7 @@ const { ok, json, badRequest, notFound, methodNotAllowed, serverError } = requir
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return methodNotAllowed();
 
-  const auth = requireAuth(event, ['manager', 'admin']);
+  const auth = await requireAuth(event, ['manager', 'admin']);
   if (auth.error) return json(auth.error.statusCode, auth.error.body);
 
   let body;
@@ -22,8 +22,6 @@ exports.handler = async (event) => {
   const category     = body.category     ? String(body.category).slice(0, 100)    : null;
   const description  = body.description  ? String(body.description).slice(0, 500) : null;
   const expenseDate  = body.expense_date ? String(body.expense_date).slice(0, 10) : null;
-  const rawAmount    = body.amount != null ? parseFloat(body.amount) : null;
-  const amount       = rawAmount > 0 ? rawAmount : null;
 
   if (!expenseId) return badRequest('expense_id is required');
   if (status !== 'approved' && status !== 'rejected') return badRequest('status must be approved or rejected');
@@ -41,8 +39,7 @@ exports.handler = async (event) => {
              gmail_message_id = COALESCE(${gmailMsgId}::text,   gmail_message_id),
              category         = COALESCE(${category}::text,    category),
              description      = COALESCE(${description}::text, description),
-             expense_date     = COALESCE(${expenseDate}::date, expense_date),
-             amount           = COALESCE(${amount}::numeric,   amount)
+             expense_date     = COALESCE(${expenseDate}::date, expense_date)
        WHERE id = ${expenseId}
        RETURNING id, status, reviewed_at
     `;

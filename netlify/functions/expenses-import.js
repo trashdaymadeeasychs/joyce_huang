@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { sql } = require('./_shared/db');
 const { requireAuth } = require('./_shared/auth');
@@ -7,7 +7,7 @@ const { ok, json, badRequest, methodNotAllowed, serverError } = require('./_shar
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return methodNotAllowed();
 
-  const auth = requireAuth(event, ['manager', 'admin']);
+  const auth = await requireAuth(event, ['manager', 'admin']);
   if (auth.error) return json(auth.error.statusCode, auth.error.body);
 
   let body;
@@ -28,10 +28,9 @@ exports.handler = async (event) => {
 
       if (!date || isNaN(amount) || amount <= 0) continue;
 
-      const payee = (desc || category).slice(0, 255);
       await sql()`
-        INSERT INTO expenses (expense_date, date, payee, category, amount, description, status)
-        VALUES (${date}, ${date}, ${payee}, ${category}, ${amount}, ${desc}, 'pending')
+        INSERT INTO expenses (expense_date, category, amount, description, status)
+        VALUES (${date}, ${category}, ${amount}, ${desc}, 'pending')
       `;
       created++;
     }

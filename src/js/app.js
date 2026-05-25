@@ -1,4 +1,4 @@
-/* App — router, shell initialization, shared utilities */
+﻿/* App — router, shell initialization, shared utilities */
 'use strict';
 
 const App = (() => {
@@ -181,13 +181,11 @@ const App = (() => {
 
   /* ── Bootstrap ───────────────────────── */
   async function boot() {
-    Auth.initLoginForm();
-
     const user = await Auth.init();
     if (user) {
       showApp(user);
     } else {
-      showLogin();
+      window.location.href = '/?login=required&returnTo=/apps/expense-tracker/';
     }
   }
 

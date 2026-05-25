@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { getStore } = require('@netlify/blobs');
 const { requireAuth } = require('./_shared/auth');
@@ -7,7 +7,7 @@ const { json, badRequest, notFound, methodNotAllowed, serverError } = require('.
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') return methodNotAllowed();
 
-  const auth = requireAuth(event);
+  const auth = await requireAuth(event);
   if (auth.error) return json(auth.error.statusCode, auth.error.body);
 
   const key = (event.queryStringParameters || {}).key;

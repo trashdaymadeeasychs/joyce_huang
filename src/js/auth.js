@@ -1,4 +1,4 @@
-/* Auth module — login form, session state */
+﻿/* Auth module — login form, session state */
 'use strict';
 
 const Auth = (() => {
@@ -9,6 +9,17 @@ const Auth = (() => {
   function clearUser() { currentUser = null; }
 
   async function init() {
+    const identity = window.netlifyIdentity;
+    if (identity && identity.init) identity.init();
+    let identityUser = identity && identity.currentUser && identity.currentUser();
+    if (identity && !identityUser) {
+      identityUser = await new Promise((resolve) => {
+        identity.on('init', (user) => resolve(user || identity.currentUser()));
+        setTimeout(() => resolve(identity.currentUser && identity.currentUser()), 1500);
+      });
+    }
+    if (!identityUser) return null;
+
     try {
       const { user } = await API.me();
       setUser(user);
@@ -19,9 +30,15 @@ const Auth = (() => {
   }
 
   async function logout() {
-    try { await API.logout(); } catch {}
+    try {
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.logout();
+      } else {
+        await API.logout();
+      }
+    } catch {}
     clearUser();
-    App.showLogin();
+    window.location.href = '/';
   }
 
   function initLoginForm() {

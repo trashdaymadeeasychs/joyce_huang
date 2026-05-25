@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { sql } = require('./_shared/db');
 const { requireAuth } = require('./_shared/auth');
@@ -10,7 +10,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return methodNotAllowed();
 
-  const auth = requireAuth(event);
+  const auth = await requireAuth(event);
   if (auth.error) return json(auth.error.statusCode, auth.error.body);
 
   let body;

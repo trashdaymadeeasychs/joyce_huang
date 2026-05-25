@@ -1,11 +1,11 @@
-'use strict';
+﻿'use strict';
 
 const { sql } = require('./_shared/db');
 const { getSessionFromEvent } = require('./_shared/auth');
 const { ok, unauthorized, serverError } = require('./_shared/response');
 
 exports.handler = async (event) => {
-  const session = getSessionFromEvent(event);
+  const session = await getSessionFromEvent(event);
   if (!session) return unauthorized('Not authenticated');
 
   try {

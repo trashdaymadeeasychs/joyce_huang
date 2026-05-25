@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { sql } = require('./_shared/db');
 const { requireAuth } = require('./_shared/auth');
@@ -20,7 +20,7 @@ function guessCategory(vendor) {
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return methodNotAllowed();
 
-  const auth = requireAuth(event, ['manager', 'admin']);
+  const auth = await requireAuth(event, ['manager', 'admin']);
   if (auth.error) return json(auth.error.statusCode, auth.error.body);
 
   try {
@@ -28,7 +28,7 @@ exports.handler = async (event) => {
     const password   = process.env.RAILWAY_APP_PASSWORD;
 
     const res = await fetch(`${railwayUrl}/receipts`, {
-      headers: { 'Authorization': `Bearer ${password}` },
+      headers: { 'x-app-password': password },
     });
     if (!res.ok) throw new Error(`Railway responded ${res.status}`);
     const { receipts } = await res.json();
@@ -48,13 +48,13 @@ exports.handler = async (event) => {
 
       const vendor   = r.sender ? r.sender.replace(/<.*>/, '').trim() : 'Unknown Vendor';
       const amount   = r.amountGuess ? Math.abs(parseFloat(r.amountGuess)) : 0.01;
-      const date     = r.date ? new Date(parseInt(r.date, 10)).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      const date     = r.date ? new Date(r.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
       const category = guessCategory(vendor);
       const desc     = vendor + (r.subject ? ` — ${r.subject}` : '');
 
       await sql()`
-        INSERT INTO expenses (expense_date, date, payee, category, amount, description, status, gmail_message_id)
-        VALUES (${date}, ${date}, ${vendor.slice(0, 255)}, ${category}, ${amount}, ${desc.slice(0, 500)}, 'pending', ${r.messageId})
+        INSERT INTO expenses (expense_date, category, amount, description, status, gmail_message_id)
+        VALUES (${date}, ${category}, ${amount}, ${desc.slice(0, 500)}, 'pending', ${r.messageId})
       `;
       existing.add(r.messageId);
       created++;

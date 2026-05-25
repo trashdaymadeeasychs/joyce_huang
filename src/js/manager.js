@@ -1,4 +1,4 @@
-/* Manager views: pending queue, all expenses, charts, import */
+﻿/* Manager views: pending queue, all expenses, charts, import */
 'use strict';
 
 const CATEGORIES = [
@@ -333,7 +333,7 @@ function openReviewModal(expenseId, expense) {
       <span class="lbl">Employee</span><span>${employeeField}</span>
       <span class="lbl">Date</span><span><input type="date" id="review-date" value="${(e.expense_date || '').slice(0,10)}" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px"></span>
       <span class="lbl">Category</span><span>${buildCategorySelect(e.category)}</span>
-      <span class="lbl">Amount</span><span><input type="number" id="review-amount" value="${e.amount || ''}" min="0.01" step="0.01" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:130px"></span>
+      <span class="lbl">Amount</span><span class="amount">${App.fmt(e.amount)}</span>
       <span class="lbl">Description</span><span><textarea id="review-description" rows="2" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;resize:vertical">${App.escHtml(e.description) || ''}</textarea></span>
       <span class="lbl">Submitted</span><span>${App.fmtDate(e.created_at)}</span>
       <span class="lbl" style="align-self:flex-start;padding-top:4px">Receipt</span><span>${buildReceiptSection(e)}</span>
@@ -356,17 +356,15 @@ async function submitReview(status) {
   const category    = getSelectedCategory();
   const description = document.getElementById('review-description')?.value.trim() || null;
   const expenseDate = document.getElementById('review-date')?.value || null;
-  const amount      = parseFloat(document.getElementById('review-amount')?.value);
 
   if (status === 'rejected' && !notes) { errEl.textContent = 'Please provide a reason for rejection.'; errEl.style.display = 'block'; return; }
   if (assignSelect && !userId) { errEl.textContent = 'Please select an employee before approving or rejecting.'; errEl.style.display = 'block'; return; }
-  if (!amount || amount <= 0) { errEl.textContent = 'Please enter a valid amount greater than $0.'; errEl.style.display = 'block'; return; }
 
   const approveBtn = document.getElementById('approve-btn');
   const rejectBtn = document.getElementById('reject-btn');
   approveBtn.disabled = rejectBtn.disabled = true;
   try {
-    await API.updateExpenseStatus({ expense_id: reviewingExpenseId, status, review_notes: notes || null, user_id: userId, category, description, expense_date: expenseDate, amount });
+    await API.updateExpenseStatus({ expense_id: reviewingExpenseId, status, review_notes: notes || null, user_id: userId, category, description, expense_date: expenseDate });
     approveBtn.disabled = rejectBtn.disabled = false;
     document.getElementById('review-modal').style.display = 'none';
     loadQueue(queuePage);
@@ -404,7 +402,7 @@ function parseRelayCSV(text) {
 
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+    const cols = lines[i].match(/(".*?"|[^,]+)(?=,|$)/g) || lines[i].split(',');
     const clean = cols.map(c => c.trim().replace(/^"|"$/g, ''));
 
     const txType = clean[idxType] || '';
@@ -565,9 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('delete-expense-btn')?.addEventListener('click', deleteExpense);
   document.getElementById('review-close')?.addEventListener('click', () => { document.getElementById('review-modal').style.display = 'none'; });
   document.getElementById('review-cancel')?.addEventListener('click', () => { document.getElementById('review-modal').style.display = 'none'; });
-  let _reviewMousedownTarget = null;
-  document.getElementById('review-modal')?.addEventListener('mousedown', (e) => { _reviewMousedownTarget = e.target; });
-  document.getElementById('review-modal')?.addEventListener('click', (e) => { if (e.target === e.currentTarget && _reviewMousedownTarget === e.currentTarget) e.currentTarget.style.display = 'none'; });
+  document.getElementById('review-modal')?.addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.style.display = 'none'; });
   document.getElementById('queue-filter-btn')?.addEventListener('click', () => loadQueue(1));
   document.getElementById('all-filter-btn')?.addEventListener('click', () => loadAllExpenses(1));
   document.getElementById('sync-gmail-btn')?.addEventListener('click', syncGmail);

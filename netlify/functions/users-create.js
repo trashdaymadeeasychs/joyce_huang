@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const bcrypt = require('bcryptjs');
 const { sql } = require('./_shared/db');
@@ -10,7 +10,7 @@ const VALID_ROLES = new Set(['employee', 'manager', 'admin']);
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return methodNotAllowed();
 
-  const auth = requireAuth(event, ['admin']);
+  const auth = await requireAuth(event, ['admin']);
   if (auth.error) return json(auth.error.statusCode, auth.error.body);
 
   let body;

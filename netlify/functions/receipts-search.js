@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { requireAuth } = require('./_shared/auth');
 const { methodNotAllowed, serverError } = require('./_shared/response');
@@ -6,7 +6,7 @@ const { methodNotAllowed, serverError } = require('./_shared/response');
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') return methodNotAllowed();
 
-  const auth = requireAuth(event, ['manager', 'admin']);
+  const auth = await requireAuth(event, ['manager', 'admin']);
   if (auth.error) return { statusCode: auth.error.statusCode, body: JSON.stringify(auth.error.body) };
 
   const railwayUrl = process.env.RAILWAY_API_URL;

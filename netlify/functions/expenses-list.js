@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { sql } = require('./_shared/db');
 const { requireAuth } = require('./_shared/auth');
@@ -9,7 +9,7 @@ const ALLOWED_STATUSES = new Set(['pending', 'approved', 'rejected']);
 exports.handler = async (event) => {
   if (event.httpMethod !== 'GET') return methodNotAllowed();
 
-  const auth = requireAuth(event);
+  const auth = await requireAuth(event);
   if (auth.error) return json(auth.error.statusCode, auth.error.body);
   const { session } = auth;
 

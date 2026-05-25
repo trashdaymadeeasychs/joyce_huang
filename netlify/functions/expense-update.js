@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { sql } = require('./_shared/db');
 const { requireAuth } = require('./_shared/auth');
@@ -7,7 +7,7 @@ const { ok, json, badRequest, notFound, methodNotAllowed, serverError } = requir
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return methodNotAllowed();
 
-  const auth = requireAuth(event, ['manager', 'admin']);
+  const auth = await requireAuth(event, ['manager', 'admin']);
   if (auth.error) return json(auth.error.statusCode, auth.error.body);
 
   let body;

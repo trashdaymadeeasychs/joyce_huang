@@ -1,12 +1,22 @@
-/* API client — wraps all Netlify Function calls */
+﻿/* API client — wraps all Netlify Function calls */
 'use strict';
 
 const BASE = '/.netlify/functions';
 
+async function authHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  const identity = window.netlifyIdentity;
+  const user = identity && identity.currentUser && identity.currentUser();
+  if (user && user.jwt) {
+    headers.Authorization = 'Bearer ' + await user.jwt();
+  }
+  return headers;
+}
+
 async function request(path, options = {}) {
   const res = await fetch(BASE + path, {
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: { ...(await authHeaders()), ...(options.headers || {}) },
     ...options,
   });
 
