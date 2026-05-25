@@ -2,72 +2,65 @@
 'use strict';
 
 /**
- * Seed initial admin and sample accounts using a real bcrypt hash.
+ * Seed the Joyce Huang user (id = 1) into a fresh database.
  *
- *   DATABASE_URL=...           (required)
- *   SEED_PASSWORD=ChangeMe123! (optional override)
+ *   DATABASE_URL=... node scripts/seed.js
  *
- *   node scripts/seed.js
+ * IMPORTANT: Run this on a completely empty database (right after migrate)
+ * so Joyce gets SERIAL id = 1. The app hardcodes user_id = 1 for all
+ * data writes (single-user mode, site gated by Netlify password).
  *
- * Idempotent: ON CONFLICT (email) DO NOTHING.
+ * Idempotent: ON CONFLICT (email) DO UPDATE — safe to re-run.
  */
 
 const bcrypt = require('bcryptjs');
 const { neon } = require('@neondatabase/serverless');
 
-const SEED_USERS = [
-  { email: 'admin@trashdaymadeeasy.com',    full_name: 'TDME Admin',       role: 'admin' },
-  { email: 'manager@trashdaymadeeasy.com',  full_name: 'Sample Manager',   role: 'manager' },
-  { email: 'employee@trashdaymadeeasy.com', full_name: 'Sample Employee',  role: 'employee' },
-];
-
-// Earlier seeds wrote these typo'd addresses to live databases. Rename them
-// in place before inserting so we don't create duplicate accounts side by side
-// with the corrected ones.
-const LEGACY_EMAIL_RENAMES = [
-  { from: 'admin@trashdaymadeasy.com',    to: 'admin@trashdaymadeeasy.com'    },
-  { from: 'manager@trashdaymadeasy.com',  to: 'manager@trashdaymadeeasy.com'  },
-  { from: 'employee@trashdaymadeasy.com', to: 'employee@trashdaymadeeasy.com' },
-];
-
 async function main() {
   const url = process.env.DATABASE_URL;
   if (!url) {
-    console.error('DATABASE_URL is not set');
+    console.error('❌  DATABASE_URL is not set.');
+    console.error('    Set it in your environment or create a .env file.');
     process.exit(1);
   }
 
-  const password = process.env.SEED_PASSWORD || 'ChangeMe123!';
-  const hash = await bcrypt.hash(password, 12);
   const sql = neon(url);
 
-  for (const r of LEGACY_EMAIL_RENAMES) {
-    const rows = await sql`
-      UPDATE users SET email = ${r.to}
-      WHERE email = ${r.from}
-        AND NOT EXISTS (SELECT 1 FROM users WHERE email = ${r.to})
-      RETURNING email
-    `;
-    if (rows.length) {
-      console.log('renamed legacy email:', r.from, '->', r.to);
-    }
-  }
+  // Password is never used for login (site uses Netlify's site password),
+  // but the column is NOT NULL so we store a secure placeholder hash.
+  const placeholderHash = await bcrypt.hash('netlify-site-password-used-instead', 10);
 
-  for (const u of SEED_USERS) {
-    await sql`
-      INSERT INTO users (email, password_hash, full_name, role, is_active)
-      VALUES (${u.email}, ${hash}, ${u.full_name}, ${u.role}, TRUE)
-      ON CONFLICT (email) DO NOTHING
-    `;
-    console.log('seeded:', u.email, `(${u.role})`);
-  }
+  const rows = await sql`
+    INSERT INTO users (email, password_hash, full_name, role, is_active)
+    VALUES (
+      'joyce@placeholder.local',
+      ${placeholderHash},
+      'Joyce Huang',
+      'admin',
+      TRUE
+    )
+    ON CONFLICT (email) DO UPDATE
+      SET full_name = EXCLUDED.full_name,
+          role      = EXCLUDED.role,
+          is_active = EXCLUDED.is_active
+    RETURNING id, full_name, role
+  `;
 
-  console.log('\nSeed complete.');
-  console.log('Default password for all seeded users:', password);
-  console.log('IMPORTANT: change every password after first login.');
+  const user = rows[0];
+  console.log(`✅  User ready: id=${user.id}  "${user.full_name}"  role=${user.role}`);
+
+  if (user.id !== 1) {
+    console.warn('');
+    console.warn(`⚠️  User id is ${user.id}, not 1.`);
+    console.warn('   The app hardcodes user_id = 1 for all data.');
+    console.warn('   Run this seed on a fresh empty database (right after migrate,');
+    console.warn('   before inserting any other rows) so the SERIAL starts at 1.');
+  } else {
+    console.log('   user_id = 1 confirmed — app is ready to use.');
+  }
 }
 
 main().catch(err => {
-  console.error('Seed failed:', err);
+  console.error('❌  Seed failed:', err.message);
   process.exit(1);
 });

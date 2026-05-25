@@ -118,7 +118,8 @@ const App = (() => {
     document.querySelectorAll('.nav-link[data-view]').forEach(a => {
       a.addEventListener('click', (e) => { e.preventDefault(); showView(a.dataset.view); });
     });
-    document.getElementById('logout-btn').addEventListener('click', () => Auth.logout());
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.addEventListener('click', () => Auth.logout());
     document.getElementById('receipt-close').addEventListener('click', () => {
       document.getElementById('receipt-modal').style.display = 'none';
     });
@@ -126,23 +127,15 @@ const App = (() => {
       if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
     });
     document.getElementById('sidebar-user-info').innerHTML =
-      `<strong>${escHtml(user.name)}</strong>${roleBadge(user.role)}<span style="font-size:10px;display:block;margin-top:2px">${escHtml(user.email)}</span>`;
+      `<strong>${escHtml(user.name)}</strong>${roleBadge(user.role)}`;
   }
 
-  function showLogin() {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('app-shell').style.display    = 'none';
-  }
+  function showLogin() { /* no-op: no login screen in single-user mode */ }
 
   function showApp(user) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-shell').style.display    = 'flex';
+    document.getElementById('app-shell').style.display = 'flex';
     setupNav(user);
-    if (user.role === 'admin' || user.role === 'manager') {
-      showView('mgr-queue');
-    } else {
-      showView('emp-dashboard');
-    }
+    showView('emp-dashboard');
     refreshPendingBadge();
   }
 
@@ -160,9 +153,8 @@ const App = (() => {
 
   /* ── Bootstrap ─────────────────────────────────────── */
   async function boot() {
-    Auth.initLoginForm();
     const user = await Auth.init();
-    if (user) { showApp(user); } else { showLogin(); }
+    showApp(user);
   }
 
   document.addEventListener('DOMContentLoaded', boot);

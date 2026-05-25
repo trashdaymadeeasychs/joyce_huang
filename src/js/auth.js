@@ -1,56 +1,23 @@
-/* Auth module — standalone JWT cookie login */
+/* Auth module — single-user, no login required.
+   Site access is controlled by Netlify's site-wide password. */
 'use strict';
 
 const Auth = (() => {
-  let currentUser = null;
+  const STATIC_USER = { id: 1, name: 'Joyce Huang', role: 'admin', email: '' };
+  let currentUser = STATIC_USER;
 
-  function getUser()  { return currentUser; }
-  function setUser(u) { currentUser = u; }
-  function clearUser(){ currentUser = null; }
+  function getUser()   { return currentUser; }
+  function setUser(u)  { currentUser = u; }
+  function clearUser() { currentUser = STATIC_USER; }
 
-  /* Try to restore session from existing JWT cookie */
-  async function init() {
-    try {
-      const { user } = await API.me();
-      setUser(user);
-      return user;
-    } catch {
-      return null;
-    }
-  }
+  // Always resolves immediately — no server round-trip needed
+  async function init() { return currentUser; }
 
-  async function logout() {
-    try { await API.logout(); } catch {}
-    clearUser();
-    App.showLogin();
-  }
+  // No-op: sign-out is handled by Netlify's site password at the browser level
+  async function logout() {}
 
-  /* Wire up the login form */
-  function initLoginForm() {
-    const form   = document.getElementById('login-form');
-    const errEl  = document.getElementById('login-error');
-    const btn    = document.getElementById('login-btn');
-    if (!form) return;
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email    = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
-      errEl.style.display = 'none';
-      btn.disabled    = true;
-      btn.textContent = 'Signing in…';
-      try {
-        const { user } = await API.login(email, password);
-        setUser(user);
-        App.showApp(user);
-      } catch (err) {
-        errEl.textContent   = err.message || 'Login failed. Check your credentials.';
-        errEl.style.display = 'block';
-        btn.disabled    = false;
-        btn.textContent = 'Sign In';
-      }
-    });
-  }
+  // No login form in single-user mode
+  function initLoginForm() {}
 
   return { init, logout, getUser, setUser, clearUser, initLoginForm };
 })();
