@@ -6,7 +6,7 @@ const CAT_ORDER = [
   'Office', 'Travel', 'Client Relations', 'Capital Assets',
 ];
 
-let pnlYear = new Date().getFullYear();
+let pnlYear = 2026;
 
 /* ══════════════════════════════════════════════════
    LOAD PAGE
@@ -17,11 +17,9 @@ async function loadPnlPage() {
 
   // Build chrome (year bar + action buttons) on first visit
   if (!document.getElementById('pnl-year')) {
-    const now = new Date().getFullYear();
-    let opts = '';
-    for (let y = now; y >= now - 4; y--) {
-      opts += `<option value="${y}"${y === now ? ' selected' : ''}>${y}</option>`;
-    }
+    const opts = [2028, 2027, 2026]
+      .map(y => `<option value="${y}"${y === 2026 ? ' selected' : ''}>${y}</option>`)
+      .join('');
     wrap.innerHTML = `
       <div class="pnl-toolbar">
         <div class="pnl-toolbar-left">

@@ -92,6 +92,7 @@ async function loadAllExpenses(page = 1) {
   tbody.innerHTML = '<tr class="spinner-row"><td colspan="10">Loading...</td></tr>';
   const params = {
     page, limit: 25,
+    tax_year:  document.getElementById('all-year')?.value    || '',
     status:    document.getElementById('all-status')?.value  || '',
     user_id:   document.getElementById('all-emp')?.value     || '',
     category:  document.getElementById('all-cat')?.value     || '',
@@ -508,6 +509,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('review-close')?.addEventListener('click',  () => { document.getElementById('review-modal').style.display = 'none'; });
   document.getElementById('review-cancel')?.addEventListener('click', () => { document.getElementById('review-modal').style.display = 'none'; });
   document.getElementById('review-modal')?.addEventListener('click',  (e) => { if (e.target === e.currentTarget) e.currentTarget.style.display = 'none'; });
+  // Populate all-year select with fixed 2026–2028 range
+  const allYearEl = document.getElementById('all-year');
+  if (allYearEl) {
+    allYearEl.innerHTML = '<option value="">All Years</option>';
+    [2028, 2027, 2026].forEach(y => allYearEl.add(new Option(y, y)));
+  }
   document.getElementById('queue-filter-btn')?.addEventListener('click', () => loadQueue(1));
   document.getElementById('all-filter-btn')?.addEventListener('click', () => loadAllExpenses(1));
   document.getElementById('sync-gmail-btn')?.addEventListener('click', syncGmail);

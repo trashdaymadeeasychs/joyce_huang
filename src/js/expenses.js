@@ -172,18 +172,16 @@ async function loadRecentExpenses() {
       cfg.paymentMethods.forEach(m => { const opt = new Option(m, m); pmSel.add(opt); });
     }
 
-    // Populate tax year dropdown — default current year
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    document.getElementById('exp-date').valueAsDate = today;
+    // Populate tax year dropdown — fixed range 2026–2028, default 2026
+    document.getElementById('exp-date').valueAsDate = new Date();
     const taxYearEl = document.getElementById('exp-tax-year');
     if (taxYearEl) {
       taxYearEl.innerHTML = '';
-      for (let y = currentYear + 1; y >= currentYear - 3; y--) {
+      [2028, 2027, 2026].forEach(y => {
         const opt = new Option(y, y);
-        if (y === currentYear) opt.selected = true;
+        if (y === 2026) opt.selected = true;
         taxYearEl.add(opt);
-      }
+      });
     }
 
     // Category → subcategory cascade
@@ -292,7 +290,7 @@ async function loadRecentExpenses() {
     function resetForm() {
       form.reset();
       document.getElementById('exp-date').valueAsDate = new Date();
-      if (taxYearEl) taxYearEl.value = new Date().getFullYear();
+      if (taxYearEl) taxYearEl.value = 2026;
       if (provSel)   provSel.value   = 'AB';
       preview.style.display = 'none';
       placeholder.style.display = '';
@@ -324,7 +322,7 @@ async function loadRecentExpenses() {
       const deductPct   = parseFloat(document.getElementById('exp-deductible-pct')?.value ?? 100);
       const bizPurpose  = document.getElementById('exp-business-purpose')?.value.trim() || null;
       const clientProp  = document.getElementById('exp-client-property')?.value.trim() || null;
-      const taxYear     = parseInt(document.getElementById('exp-tax-year')?.value) || new Date().getFullYear();
+      const taxYear     = parseInt(document.getElementById('exp-tax-year')?.value) || 2026;
       const file        = fileInput.files[0];
       const isCapital   = cfg.isCapitalAsset(category);
       const ccaClass    = document.getElementById('exp-cca-class')?.value || null;
@@ -406,6 +404,7 @@ async function loadHistory(page = 1) {
 
   const params = {
     page, limit: 20,
+    tax_year:  document.getElementById('hist-year')?.value      || '',
     status:    document.getElementById('hist-status')?.value    || '',
     category:  document.getElementById('hist-category')?.value  || '',
     date_from: document.getElementById('hist-from')?.value      || '',
@@ -443,5 +442,11 @@ window.loadEmpDashboard = loadEmpDashboard;
 window.loadHistory      = loadHistory;
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Populate hist-year select with fixed 2026–2028 range
+  const histYearEl = document.getElementById('hist-year');
+  if (histYearEl) {
+    histYearEl.innerHTML = '<option value="">All Years</option>';
+    [2028, 2027, 2026].forEach(y => histYearEl.add(new Option(y, y)));
+  }
   document.getElementById('hist-filter-btn')?.addEventListener('click', () => loadHistory(1));
 });
