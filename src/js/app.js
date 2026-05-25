@@ -135,11 +135,7 @@ const App = (() => {
   function showApp(user) {
     document.getElementById('app-shell').style.display = 'flex';
     setupNav(user);
-    if (user.role === 'admin' || user.role === 'manager') {
-      showView('mgr-queue');
-    } else {
-      showView('emp-dashboard');
-    }
+    showView('emp-dashboard');
     refreshPendingBadge();
   }
 
