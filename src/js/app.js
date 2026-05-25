@@ -90,7 +90,7 @@ const App = (() => {
       'emp-submit':    'Submit Expense',
       'emp-history':   'My Expenses',
       'income':        'Income',
-      'pnl':           'P&L Report',
+      'pnl':           'Create PnL Report',
       'mgr-queue':     'Pending Review',
       'mgr-all':       'All Expenses',
       'mgr-import':    'Import Statement',
